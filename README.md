@@ -11,7 +11,7 @@ mvn install
 
 ## Use
 
-Create a new Maven project, use an existing one like [HelloFX](https://github.com/openjfx/samples/tree/master/CommandLine/Modular/Maven/hellofx), or use an [archetype](https://github.com/abhinayagarwal/javafx-archetype-simple/).
+Create a new Maven project, use an existing one like [HelloFX](https://github.com/openjfx/samples/tree/master/CommandLine/Modular/Maven/hellofx), or use an [archetype](https://github.com/openjfx/javafx-maven-archetypes).
 
 The project can be modular or non-modular.
 
