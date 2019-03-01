@@ -246,7 +246,7 @@
   <scm>
     <url>https://github.com/openjfx/javafx-maven-plugin</url>
     <connection>scm:git:git://github.com/openjfx/javafx-maven-plugin.git</connection>
-    <developerConnection>scm:git:ssh://git@github.com:penjfx/javafx-maven-plugin.git</developerConnection>
+    <developerConnection>scm:git:ssh://git@github.com:openjfx/javafx-maven-plugin.git</developerConnection>
   </scm>
 
   <distributionManagement>
