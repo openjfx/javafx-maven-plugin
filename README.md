@@ -32,7 +32,7 @@ Add the plugin:
 <plugin>
     <groupId>org.openjfx</groupId>
     <artifactId>javafx-maven-plugin</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.0.1</version>
     <configuration>
         <mainClass>org.openjfx.App</mainClass>
     </configuration>
@@ -61,7 +61,7 @@ Optionally, other VM arguments and runtime arguments can be set:
 <plugin>
     <groupId>org.openjfx</groupId>
     <artifactId>javafx-maven-plugin</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.0.1</version>
     <configuration>
         <mainClass>org.openjfx.hellofx/org.openjfx.App</mainClass>
         <options>
