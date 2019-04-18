@@ -36,7 +36,25 @@ public class JavaFXCompileMojo extends AbstractMojo {
     @Component
     private BuildPluginManager pluginManager;
 
+    /**
+     * <p>The -source argument for the Java compiler.</p>
+     */
+    @Parameter(property = "javafx.source", defaultValue = "11")
+    protected String source;
+
+    /**
+     * <p>The -target argument for the Java compiler.</p>
+     */
+    @Parameter(property = "javafx.target", defaultValue = "11")
+    protected String target;
+
+    /**
+     * The -release argument for the Java compiler
+     */
+    @Parameter(property = "javafx.release", defaultValue = "11")
+    protected String release;
+
     public void execute() throws MojoExecutionException {
-        Compile.compile(project, session,  pluginManager);
+        Compile.compile(project, session,  pluginManager, source, target, release);
     }
 }
