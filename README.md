@@ -75,3 +75,19 @@ Optionally, other VM arguments and runtime arguments can be set:
     </configuration>
 </plugin>
 ```
+
+Optionally, when compiling with ``javafx:compile``, the source level, 
+target level and/or the release level for the Java compiler can be set:
+
+```
+<plugin>
+    <groupId>org.openjfx</groupId>
+    <artifactId>javafx-maven-plugin</artifactId>
+    <version>0.0.1</version>
+    <configuration>
+        <source>12</source>
+        <target>12</target>
+        <release>12</release>
+        <mainClass>org.openjfx.hellofx/org.openjfx.App</mainClass>
+    </configuration>
+</plugin>
