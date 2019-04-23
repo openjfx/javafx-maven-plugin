@@ -28,7 +28,8 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
  */
 class Compile {
 
-    public static void compile(MavenProject project, MavenSession session, BuildPluginManager pluginManager) throws MojoExecutionException {
+    public static void compile(MavenProject project, MavenSession session, BuildPluginManager pluginManager,
+                               String source, String target, String release) throws MojoExecutionException {
         ExecutionEnvironment env = executionEnvironment(
                 project,
                 session,
@@ -48,7 +49,9 @@ class Compile {
                         version("3.8.0")),
                 goal("compile"),
                 configuration(
-                        element(name("release"),"11")
+                        element(name("source"), source),
+                        element(name("target"), target),
+                        element(name("release"), release)
                 ),
                 env);
     }

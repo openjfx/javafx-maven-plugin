@@ -16,27 +16,16 @@
 
 package org.openjfx;
 
-import org.apache.maven.execution.MavenSession;
-import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugins.annotations.*;
-import org.apache.maven.project.MavenProject;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.ResolutionScope;
 
 @Mojo(name = "compile", defaultPhase = LifecyclePhase.COMPILE,
         requiresDependencyResolution = ResolutionScope.COMPILE)
-public class JavaFXCompileMojo extends AbstractMojo {
-
-    @Parameter(defaultValue = "${project}", readonly = true)
-    private MavenProject project;
-
-    @Parameter(defaultValue = "${session}", readonly = true)
-    private MavenSession session;
-
-    @Component
-    private BuildPluginManager pluginManager;
+public class JavaFXCompileMojo extends JavaFXBaseMojo {
 
     public void execute() throws MojoExecutionException {
-        Compile.compile(project, session,  pluginManager);
+        compile();
     }
 }
