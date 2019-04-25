@@ -89,7 +89,7 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
     /**
      * The current working directory. Optional. If not specified, basedir will be used.
      */
-    @Parameter(property = "javafx.workingdir")
+    @Parameter(property = "javafx.workingDirectory")
     File workingDirectory;
 
     @Parameter(defaultValue = "${project.compileClasspathElements}", readonly = true, required = true)
