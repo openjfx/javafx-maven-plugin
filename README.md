@@ -38,7 +38,7 @@ Add the plugin:
 <plugin>
     <groupId>org.openjfx</groupId>
     <artifactId>javafx-maven-plugin</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
     <configuration>
         <mainClass>hellofx/org.openjfx.App</mainClass>
     </configuration>
@@ -77,7 +77,7 @@ This configuration changes these levels to 12, for instance:
 <plugin>
     <groupId>org.openjfx</groupId>
     <artifactId>javafx-maven-plugin</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
     <configuration>
         <source>12</source>
         <target>12</target>
@@ -106,7 +106,7 @@ For instance, the following configuration adds some VM options and a command lin
 <plugin>
     <groupId>org.openjfx</groupId>
     <artifactId>javafx-maven-plugin</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
     <configuration>
         <mainClass>org.openjfx.hellofx/org.openjfx.App</mainClass>
         <options>
@@ -141,7 +141,7 @@ For instance, with the following configuration:
 <plugin>
     <groupId>org.openjfx</groupId>
     <artifactId>javafx-maven-plugin</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
     <configuration>
         <stripDebug>true</stripDebug>
         <compress>2</compress>
