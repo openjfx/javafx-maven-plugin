@@ -145,6 +145,9 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
     @Parameter(property = "javafx.release", defaultValue = "11")
     private String release;
 
+    @Parameter(property = "javafx.includePathExceptionsInClasspath", defaultValue = "false")
+    private boolean includePathExceptionsInClasspath;
+
     List<String> classpathElements;
     List<String> modulepathElements;
     Map<String, JavaModuleDescriptor> pathElements;
@@ -195,13 +198,22 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
             }
             resolvePathsResult = locationManager.resolvePaths(fileResolvePathsRequest);
 
-            for (Map.Entry<File, Exception> pathException : resolvePathsResult.getPathExceptions().entrySet()) {
-                Throwable cause = pathException.getValue();
-                while (cause.getCause() != null) {
-                    cause = cause.getCause();
+            if (!resolvePathsResult.getPathExceptions().isEmpty()) {
+                // for each path exception, show a warning to plugin user...
+                for (Map.Entry<File, Exception> pathException : resolvePathsResult.getPathExceptions().entrySet()) {
+                    Throwable cause = pathException.getValue();
+                    while (cause.getCause() != null) {
+                        cause = cause.getCause();
+                    }
+                    String fileName = pathException.getKey().getName();
+                    getLog().warn("Can't extract module name from " + fileName + ": " + cause.getMessage());
                 }
-                String fileName = pathException.getKey().getName();
-                getLog().warn("Can't extract module name from " + fileName + ": " + cause.getMessage());
+                // ...if includePathExceptionsInClasspath is NOT enabled; provide configuration hint to plugin user
+                if (!includePathExceptionsInClasspath) {
+                    getLog().warn("Some dependencies encountered issues while attempting to be resolved as modules" +
+                        " and will not be included in the classpath; you can change this behavior via the " +
+                        " 'includePathExceptionsInClasspath' configuration parameter.");
+                }
             }
 
             if (moduleDescriptorPath != null) {
@@ -233,6 +245,11 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
             getLog().debug("modulepathElements: " + resolvePathsResult.getModulepathElements().size());
             resolvePathsResult.getModulepathElements().keySet()
                     .forEach(file -> modulepathElements.add(file.getPath()));
+
+            if (includePathExceptionsInClasspath) {
+                resolvePathsResult.getPathExceptions().keySet()
+                    .forEach(file -> classpathElements.add(file.getPath()));
+            }
 
             if (moduleDescriptorPath == null) {
                 pathElements.forEach((k, v) -> {
