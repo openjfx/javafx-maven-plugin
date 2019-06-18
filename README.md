@@ -162,3 +162,11 @@ mvn clean javafx:jlink
 
 target/hello/bin/hellofx
 ```
+
+## Issues and Contributions ##
+
+Issues can be reported to the [Issue tracker](https://github.com/openjfx/javafx-maven-plugin/issues/).
+
+Contributions can be submitted via [Pull requests](https://github.com/openjfx/javafx-maven-plugin/pulls/), 
+providing you have signed the [Gluon Individual Contributor License Agreement (CLA)](https://docs.google.com/forms/d/16aoFTmzs8lZTfiyrEm8YgMqMYaGQl0J8wA0VJE2LCCY).
+
