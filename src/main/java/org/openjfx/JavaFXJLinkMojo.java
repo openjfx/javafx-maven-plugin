@@ -37,11 +37,13 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Mojo(name = "jlink", requiresDependencyResolution = ResolutionScope.RUNTIME)
 public class JavaFXJLinkMojo extends JavaFXBaseMojo {
@@ -181,6 +183,40 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
                     throw new MojoExecutionException(message);
                 }
 
+                if (launcher != null && ! launcher.isEmpty()) {
+                    Path launcherPath = Paths.get(builddir.getAbsolutePath(), jlinkImageName, "bin", launcher);
+                    if (options != null) {
+                        String optionsString = options.stream()
+                            .filter(Objects::nonNull)
+                            .filter(String.class::isInstance)
+                            .map(String.class::cast)
+                            .collect(Collectors.joining(" "));
+
+                        // Add vm options to launcher script
+                        List<String> lines = Files.lines(launcherPath)
+                                .map(line -> {
+                                    if ("JLINK_VM_OPTIONS=".equals(line)) {
+                                        return "JLINK_VM_OPTIONS=\"" + optionsString + "\"";
+                                    }
+                                    return line;
+                                })
+                                .collect(Collectors.toList());
+                        Files.write(launcherPath, lines);
+                    }
+                    if (commandlineArgs != null) {
+                        // Add options to launcher script
+                        List<String> lines = Files.lines(launcherPath)
+                                .map(line -> {
+                                    if (line.endsWith("$@")) {
+                                        return line.replace("$@", commandlineArgs + " $@");
+                                    }
+                                    return line;
+                                })
+                                .collect(Collectors.toList());
+                        Files.write(launcherPath, lines);
+                    }
+                }
+
                 if (jlinkZipName != null && ! jlinkZipName.isEmpty()) {
                     getLog().debug("Creating zip of runtime image");
                     File createZipArchiveFromImage = createZipArchiveFromImage();
@@ -203,14 +239,6 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
 
     private void handleArguments(List<String> commandArguments) throws MojoExecutionException, MojoFailureException {
         preparePaths();
-
-        if (options != null) {
-            options.stream()
-                    .filter(Objects::nonNull)
-                    .filter(String.class::isInstance)
-                    .map(String.class::cast)
-                    .forEach(commandArguments::add);
-        }
 
         if (modulepathElements != null && !modulepathElements.isEmpty()) {
             commandArguments.add(" --module-path");
