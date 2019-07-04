@@ -17,6 +17,7 @@
 package org.openjfx;
 
 import org.apache.maven.artifact.handler.DefaultArtifactHandler;
+import org.apache.maven.model.Repository;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
@@ -28,8 +29,13 @@ import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory;
 import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.graph.DependencyFilter;
 import org.eclipse.aether.impl.DefaultServiceLocator;
-import org.eclipse.aether.repository.*;
-import org.eclipse.aether.resolution.*;
+import org.eclipse.aether.repository.LocalRepository;
+import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.resolution.ArtifactRequest;
+import org.eclipse.aether.resolution.ArtifactResolutionException;
+import org.eclipse.aether.resolution.ArtifactResult;
+import org.eclipse.aether.resolution.DependencyRequest;
+import org.eclipse.aether.resolution.DependencyResolutionException;
 import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
 import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.file.FileTransporterFactory;
@@ -37,23 +43,33 @@ import org.eclipse.aether.transport.http.HttpTransporterFactory;
 import org.eclipse.aether.util.artifact.JavaScopes;
 import org.eclipse.aether.util.filter.DependencyFilterUtils;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
  * Resolve all transitive artifacts from a given dependency on a pom file
  * This is required because these are not resolved when running the tests
  */
-class MavenLocalArtifactResolver {
+class MavenArtifactResolver {
 
     private static String DEFAULT_LOCAL_REPO = org.apache.maven.repository.RepositorySystem.
             defaultUserLocalRepository.getAbsolutePath();
 
     private final RepositorySystem repositorySystem;
-    private final List<RemoteRepository> remoteRepositories = new LinkedList<>();
+    private final List<RemoteRepository> remoteRepositories;
 
-    MavenLocalArtifactResolver() {
+    MavenArtifactResolver(List<Repository> repositories) {
         this.repositorySystem = createRepositorySystem();
+        this.remoteRepositories = new LinkedList<>();
+        repositories.forEach(r -> {
+            RemoteRepository repository = new RemoteRepository
+                    .Builder(r.getId(), "default", r.getUrl())
+                    .build();
+            remoteRepositories.add(repository);
+        });
     }
 
     private RepositorySystem createRepositorySystem() {

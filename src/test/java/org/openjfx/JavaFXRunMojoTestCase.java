@@ -123,7 +123,7 @@ public class JavaFXRunMojoTestCase extends AbstractMojoTestCase {
         assertNotNull(project);
 
         if (! project.getDependencies().isEmpty()) {
-            final MavenLocalArtifactResolver resolver = new MavenLocalArtifactResolver();
+            final MavenArtifactResolver resolver = new MavenArtifactResolver(project.getRepositories());
             Set<Artifact> artifacts = project.getDependencies().stream()
                     .map(d -> new DefaultArtifact(d.getGroupId(), d.getArtifactId(), d.getClassifier(), d.getType(), d.getVersion()))
                     .flatMap(a -> resolver.resolve(a).stream())
