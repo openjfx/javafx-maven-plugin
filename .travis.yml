@@ -27,14 +27,14 @@ cache:
 deploy:
   # Deploy snapshots on every commit made to master
   - provider: script
-    script: sh .ci/deploy-snapshot.sh
+    script: bash .ci/deploy-snapshot.sh
     skip_cleanup: true
     on:
       branch: master
 
   # Deploy releases on every tag push
   - provider: script
-    script: sh .ci/release.sh
+    script: bash .ci/release.sh
     skip_cleanup: true
     on:
       tags: true
