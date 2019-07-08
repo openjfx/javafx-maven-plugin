@@ -27,7 +27,7 @@ cache:
 deploy:
   # Deploy snapshots on every commit made to master
   - provider: script
-    script: sh .ci/snapshot.sh
+    script: sh .ci/deploy-snapshot.sh
     skip_cleanup: true
     on:
       branch: master
