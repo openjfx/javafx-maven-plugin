@@ -211,10 +211,13 @@
                 </goals>
                 <configuration>
                   <!-- This is necessary for gpg to not try to use the pinentry programs -->
+                  <!-- Only required for GPG >= 2.2 -->
+                  <!--
                   <gpgArguments>
-                    <arg>--pinentry-mode</arg>
+                    <arg>&#45;&#45;pinentry-mode</arg>
                     <arg>loopback</arg>
                   </gpgArguments>
+                  -->
                 </configuration>
               </execution>
             </executions>
