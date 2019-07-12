@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 
 # Decrypt encrypted files
-openssl aes-256-cbc -K $encrypted_8795c864beda_key -iv $encrypted_8795c864beda_iv -in .ci/secring.gpg.enc -out secring.gpg -d
+openssl aes-256-cbc -K $encrypted_04317ab43744_key -iv $encrypted_04317ab43744_iv -in .ci/secring.gpg.enc -out secring.gpg -d
+openssl aes-256-cbc -K $encrypted_04317ab43744_key -iv $encrypted_04317ab43744_iv -in .ci/pubring.gpg.enc -out pubring.gpg -d
+if [[ ! -s pubring.gpg || ! -s secring.gpg ]]
+   then echo "Decryption failed."
+   exit 1
+fi
 
 # Release artifacts
 cp .travis.settings.xml $HOME/.m2/settings.xml && mvn deploy -DskipTests=true -B -U -Prelease

@@ -18,8 +18,11 @@
                 <gpg.executable>${GPG_EXECUTABLE}</gpg.executable>
                 <gpg.keyname>${GPG_KEYNAME}</gpg.keyname>
                 <gpg.passphrase>${GPG_PASSPHRASE}</gpg.passphrase>
+                <!-- Tell gpg to NOT use the default keyring from the current user's home -->
                 <gpg.defaultKeyring>false</gpg.defaultKeyring>
-                <gpg.homedir>/home/travis/build/javafx-maven-plugin/</gpg.homedir>
+                <!-- Tell gpg to use the keyrings -->
+                <gpg.publicKeyring>${TRAVIS_BUILD_DIR}/pubring.gpg</gpg.publicKeyring>
+                <gpg.secretKeyring>${TRAVIS_BUILD_DIR}/secring.gpg</gpg.secretKeyring>
             </properties>
         </profile>
     </profiles>
