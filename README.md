@@ -57,6 +57,9 @@ Alternatively, the `maven-compiler-plugin` can be used:
 mvn compile
 ```
 
+Note that including this plugin is convenient for a better 
+project integration within your IDE.
+
 To run the project:
 
 ```
@@ -103,7 +106,7 @@ If required, compiler arguments can be set. For instance:
     <configuration>
         <compilerArgs>
             <arg>--add-exports</arg>
-            <arg>javafx.graphics/com.sun.glass.ui=ALL-UNNAMED</arg>
+            <arg>javafx.graphics/com.sun.glass.ui=org.openjfx.hellofx</arg>
         </compilerArgs>
         <mainClass>org.openjfx.hellofx/org.openjfx.App</mainClass>
     </configuration>
