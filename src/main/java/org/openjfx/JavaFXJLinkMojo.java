@@ -125,6 +125,12 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
     private String jlinkExecutable;
 
     /**
+     * Optional jmodsPath path for local builds.
+     */
+    @Parameter(property = "javafx.jmodsPath")
+    private String jmodsPath;
+
+    /**
      * The JAR archiver needed for archiving the environments.
      */
     @Component(role = Archiver.class, hint = "zip")
@@ -243,6 +249,10 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
         if (modulepathElements != null && !modulepathElements.isEmpty()) {
             commandArguments.add(" --module-path");
             String modulePath = StringUtils.join(modulepathElements.iterator(), File.pathSeparator);
+            if (jmodsPath != null && ! jmodsPath.isEmpty()) {
+                getLog().debug("Including jmods from local path: " + jmodsPath);
+                modulePath = jmodsPath + File.pathSeparator + modulePath;
+            }
             commandArguments.add(modulePath);
 
             commandArguments.add(" --add-modules");

@@ -147,6 +147,26 @@ For instance, the following configuration adds some VM options and a command lin
 </plugin>
 ```
 
+A local SDK can be used, for instance, in case of a local build of OpenJFX, 
+by adding the local jars instead of those from Maven Central, like:
+
+```
+<properties>
+    <sdk>/path/to/javafx-sdk</sdk>
+</properties>
+
+<dependencies>
+    <dependency>
+        <groupId>org.openjfx</groupId>
+        <artifactId>javafx.base</artifactId>
+        <version>1.0</version>
+        <scope>system</scope>
+        <systemPath>${sdk}/lib/javafx.base.jar</systemPath>
+    </dependency>
+    ...
+</dependencies>
+```
+
 ### javafx:jlink options
 
 The same command line options for `jlink` can be set:
@@ -164,7 +184,7 @@ The same command line options for `jlink` can be set:
 - `jlinkImageName`: The name of the folder with the resulting runtime image
 - `jlinkZipName`: When set, creates a zip of the resulting runtime image
 - `jlinkExecutable`: The `jlink` executable. It can be a full path or the name of the executable, if it is in the PATH.
-
+- `jmodsPath`: When using a local JavaFX SDK, sets the path with the local JavaFX jmods
 
 For instance, with the following configuration:
 

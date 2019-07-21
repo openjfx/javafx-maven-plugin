@@ -286,7 +286,16 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
     }
 
     private List<File> getCompileClasspathElements(MavenProject project) {
-        List<File> list = project.getArtifacts().stream()
+        List<File> list = new ArrayList<>();
+        list.add(new File(project.getBuild().getOutputDirectory()));
+
+        // include systemPath dependencies
+        list.addAll(project.getDependencies().stream()
+                .filter(d -> d.getSystemPath() != null && ! d.getSystemPath().isEmpty())
+                .map(d -> new File(d.getSystemPath()))
+                .collect(Collectors.toList()));
+
+        list.addAll(project.getArtifacts().stream()
                 .sorted((a1, a2) -> {
                     int compare = a1.compareTo(a2);
                     if (compare == 0) {
@@ -296,9 +305,10 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
                     return compare;
                 })
                 .map(Artifact::getFile)
+                .collect(Collectors.toList()));
+        return list.stream()
+                .distinct()
                 .collect(Collectors.toList());
-        list.add(0, new File(project.getBuild().getOutputDirectory()));
-        return list;
     }
 
     void compile() throws MojoExecutionException {
