@@ -145,6 +145,16 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
     @Parameter(property = "javafx.release", defaultValue = "11")
     private String release;
 
+    /**
+     * A list of arguments passed to the compiler.
+     */
+    @Parameter
+    private List<String> compilerArgs;
+
+    /**
+     * If set to true, it will include the dependencies that
+     * generate path exceptions in the classpath. Default is false.
+     */
     @Parameter(property = "javafx.includePathExceptionsInClasspath", defaultValue = "false")
     private boolean includePathExceptionsInClasspath;
 
@@ -292,7 +302,10 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
     }
 
     void compile() throws MojoExecutionException {
-        Compile.compile(project, session, pluginManager, source, target, release);
+        if (compilerArgs == null) {
+            compilerArgs = new ArrayList<>();
+        }
+        Compile.compile(project, session, pluginManager, source, target, release, compilerArgs);
     }
 
     void handleWorkingDirectory() throws MojoExecutionException {

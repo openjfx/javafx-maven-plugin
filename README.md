@@ -51,6 +51,12 @@ To compile the project (optional):
 mvn javafx:compile
 ```
 
+Alternatively, the `maven-compiler-plugin` can be used:
+
+```
+mvn compile
+```
+
 To run the project:
 
 ```
@@ -67,7 +73,7 @@ target/image/bin/java -m hellofx/org.openjfx.App
 
 ### javafx:compile options
 
-Optionally, when compiling with ``javafx:compile``, the source level, 
+When compiling with ``javafx:compile``, the source level, 
 target level and/or the release level for the Java compiler can be set. 
 The default value is 11.
 
@@ -82,6 +88,23 @@ This configuration changes these levels to 12, for instance:
         <source>12</source>
         <target>12</target>
         <release>12</release>
+        <mainClass>org.openjfx.hellofx/org.openjfx.App</mainClass>
+    </configuration>
+</plugin>
+```
+
+If required, compiler arguments can be set. For instance:
+
+```
+<plugin>
+    <groupId>org.openjfx</groupId>
+    <artifactId>javafx-maven-plugin</artifactId>
+    <version>0.0.2</version>
+    <configuration>
+        <compilerArgs>
+            <arg>--add-exports</arg>
+            <arg>javafx.graphics/com.sun.glass.ui=ALL-UNNAMED</arg>
+        </compilerArgs>
         <mainClass>org.openjfx.hellofx/org.openjfx.App</mainClass>
     </configuration>
 </plugin>
