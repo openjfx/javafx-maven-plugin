@@ -188,7 +188,7 @@ The same command line options for `jlink` can be set:
 - `jlinkImageName`: The name of the folder with the resulting runtime image
 - `jlinkZipName`: When set, creates a zip of the resulting runtime image
 - `jlinkExecutable`: The `jlink` executable. It can be a full path or the name of the executable, if it is in the PATH.
-- `jmodsPath`: When using a local JavaFX SDK, sets the path with the local JavaFX jmods
+- `jmodsPath`: When using a local JavaFX SDK, sets the path to the local JavaFX jmods
 
 For instance, with the following configuration:
 
