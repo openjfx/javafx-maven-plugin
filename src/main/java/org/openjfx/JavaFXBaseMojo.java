@@ -145,6 +145,16 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
     @Parameter(property = "javafx.release", defaultValue = "11")
     private String release;
 
+    /**
+     * A list of arguments passed to the compiler.
+     */
+    @Parameter
+    private List<String> compilerArgs;
+
+    /**
+     * If set to true, it will include the dependencies that
+     * generate path exceptions in the classpath. Default is false.
+     */
     @Parameter(property = "javafx.includePathExceptionsInClasspath", defaultValue = "false")
     private boolean includePathExceptionsInClasspath;
 
@@ -276,7 +286,16 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
     }
 
     private List<File> getCompileClasspathElements(MavenProject project) {
-        List<File> list = project.getArtifacts().stream()
+        List<File> list = new ArrayList<>();
+        list.add(new File(project.getBuild().getOutputDirectory()));
+
+        // include systemPath dependencies
+        list.addAll(project.getDependencies().stream()
+                .filter(d -> d.getSystemPath() != null && ! d.getSystemPath().isEmpty())
+                .map(d -> new File(d.getSystemPath()))
+                .collect(Collectors.toList()));
+
+        list.addAll(project.getArtifacts().stream()
                 .sorted((a1, a2) -> {
                     int compare = a1.compareTo(a2);
                     if (compare == 0) {
@@ -286,13 +305,17 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
                     return compare;
                 })
                 .map(Artifact::getFile)
+                .collect(Collectors.toList()));
+        return list.stream()
+                .distinct()
                 .collect(Collectors.toList());
-        list.add(0, new File(project.getBuild().getOutputDirectory()));
-        return list;
     }
 
     void compile() throws MojoExecutionException {
-        Compile.compile(project, session, pluginManager, source, target, release);
+        if (compilerArgs == null) {
+            compilerArgs = new ArrayList<>();
+        }
+        Compile.compile(project, session, pluginManager, source, target, release, compilerArgs);
     }
 
     void handleWorkingDirectory() throws MojoExecutionException {

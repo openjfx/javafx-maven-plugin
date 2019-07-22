@@ -20,8 +20,22 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
+import org.twdata.maven.mojoexecutor.MojoExecutor;
+import org.twdata.maven.mojoexecutor.MojoExecutor.Element;
 
-import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
+import java.util.List;
+import java.util.Objects;
+
+import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.executeMojo;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.executionEnvironment;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.goal;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.groupId;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.name;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 
 /**
  * Runs resources and compile plugin
@@ -29,8 +43,9 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 class Compile {
 
     public static void compile(MavenProject project, MavenSession session, BuildPluginManager pluginManager,
-                               String source, String target, String release) throws MojoExecutionException {
-        ExecutionEnvironment env = executionEnvironment(
+                               String source, String target, String release,
+                               List<String> compilerArgs) throws MojoExecutionException {
+        MojoExecutor.ExecutionEnvironment env = executionEnvironment(
                 project,
                 session,
                 pluginManager);
@@ -46,12 +61,16 @@ class Compile {
         executeMojo(
                 plugin(groupId("org.apache.maven.plugins"),
                         artifactId("maven-compiler-plugin"),
-                        version("3.8.0")),
+                        version("3.8.1")),
                 goal("compile"),
                 configuration(
                         element(name("source"), source),
                         element(name("target"), target),
-                        element(name("release"), release)
+                        element(name("release"), release),
+                        element(name("compilerArgs"), compilerArgs.stream()
+                                .filter(Objects::nonNull)
+                                .map(s -> new Element("arg", s))
+                                .toArray(Element[]::new))
                 ),
                 env);
     }
