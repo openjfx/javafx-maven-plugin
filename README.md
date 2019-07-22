@@ -148,7 +148,8 @@ For instance, the following configuration adds some VM options and a command lin
 ```
 
 A local SDK can be used, for instance, in case of a local build of OpenJFX, 
-by adding the local jars instead of those from Maven Central, like:
+by adding all the required local jars (as there are no transitive dependencies), 
+instead of those from Maven Central, like:
 
 ```
 <properties>
