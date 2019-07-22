@@ -147,9 +147,12 @@ For instance, the following configuration adds some VM options and a command lin
 </plugin>
 ```
 
-A local SDK can be used, for instance, in case of a local build of OpenJFX, 
-by adding all the required local jars (as there are no transitive dependencies), 
-instead of those from Maven Central, like:
+**Note**
+
+It is possible to use a local SDK instead of Maven Central. 
+This is helpful for developers trying to test a local build of OpenJFX. 
+Since transitive dependencies are not resolved, 
+all the required jars needs to be added as a separate dependency, like:
 
 ```
 <properties>
