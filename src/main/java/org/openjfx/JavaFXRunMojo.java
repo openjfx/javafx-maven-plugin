@@ -142,7 +142,7 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
                         .filter(Objects::nonNull)
                         .map(JavaModuleDescriptor::name)
                         .filter(Objects::nonNull)
-                        .filter(module -> !module.endsWith("Empty"))
+                        .filter(module -> module.startsWith(JAVAFX_PREFIX) && !module.endsWith("Empty"))
                         .collect(Collectors.joining(","));
                 commandArguments.add(" " + modules);
             }

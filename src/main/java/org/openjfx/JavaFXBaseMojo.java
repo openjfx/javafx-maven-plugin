@@ -59,6 +59,8 @@ import java.util.stream.Stream;
 
 abstract class JavaFXBaseMojo extends AbstractMojo {
 
+    static final String JAVAFX_PREFIX = "javafx";
+
     @Parameter(defaultValue = "${project}", readonly = true)
     MavenProject project;
 
@@ -262,8 +264,10 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
             }
 
             if (moduleDescriptorPath == null) {
+                // non-modular projects
                 pathElements.forEach((k, v) -> {
-                    if (v != null && v.name() != null) {
+                    if (v != null && v.name() != null && v.name().startsWith(JAVAFX_PREFIX)) {
+                        // only JavaFX jars are required in the module-path
                         modulepathElements.add(k);
                     } else {
                         classpathElements.add(k);
