@@ -28,7 +28,7 @@ JavaFX dependencies are added as usual:
 <dependency>
     <groupId>org.openjfx</groupId>
     <artifactId>javafx-controls</artifactId>
-    <version>12.0.1</version>
+    <version>12.0.2</version>
 </dependency>
 ```
 
