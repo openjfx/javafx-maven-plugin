@@ -66,12 +66,15 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
 
         try {
             handleWorkingDirectory();
-
-            List<String> commandArguments = new ArrayList<>();
-            handleArguments(commandArguments);
-
+            
             Map<String, String> enviro = handleSystemEnvVariables();
             CommandLine commandLine = getExecutablePath(executable, enviro, workingDirectory);
+            
+            boolean usingOldJDK = isOldJDK(commandLine);
+
+            List<String> commandArguments = new ArrayList<>();
+            handleArguments(usingOldJDK, commandArguments);
+
             String[] args = commandArguments.toArray(new String[commandArguments.size()]);
             commandLine.addArguments(args, false);
             getLog().debug("Executing command line: " + commandLine);
@@ -116,9 +119,23 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
 
     }
 
+    private static boolean isOldJDK(CommandLine commandLine) {
+        final String java = commandLine.getExecutable();
+        if (java == null) {
+            return false;
+        }
+        final File bin = new File(java).getParentFile();
+        if (bin == null) {
+            return false;
+        }
+        final File jre = bin.getParentFile();
+        if (jre == null) {
+            return false;
+        }
+        return new File(new File(jre, "lib"), "rt.jar").exists();
+    }
 
-
-    private void handleArguments(List<String> commandArguments) throws MojoExecutionException, MojoFailureException {
+    private void handleArguments(boolean oldJDK, List<String> commandArguments) throws MojoExecutionException, MojoFailureException {
         preparePaths();
 
         if (options != null) {
@@ -128,30 +145,32 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
                     .map(String.class::cast)
                     .forEach(commandArguments::add);
         }
+        if (!oldJDK) {
 
-        if (modulepathElements != null && !modulepathElements.isEmpty()) {
-            commandArguments.add(" --module-path");
-            String modulePath = StringUtils.join(modulepathElements.iterator(), File.pathSeparator);
-            commandArguments.add(modulePath);
+            if (modulepathElements != null && !modulepathElements.isEmpty()) {
+                commandArguments.add(" --module-path");
+                String modulePath = StringUtils.join(modulepathElements.iterator(), File.pathSeparator);
+                commandArguments.add(modulePath);
 
-            commandArguments.add(" --add-modules");
-            if (moduleDescriptor != null) {
-                commandArguments.add(" " + moduleDescriptor.name());
-            } else {
-                String modules = pathElements.values().stream()
-                        .filter(Objects::nonNull)
-                        .map(JavaModuleDescriptor::name)
-                        .filter(Objects::nonNull)
-                        .filter(module -> module.startsWith(JAVAFX_PREFIX) && !module.endsWith("Empty"))
-                        .collect(Collectors.joining(","));
-                commandArguments.add(" " + modules);
+                commandArguments.add(" --add-modules");
+                if (moduleDescriptor != null) {
+                    commandArguments.add(" " + moduleDescriptor.name());
+                } else {
+                    String modules = pathElements.values().stream()
+                            .filter(Objects::nonNull)
+                            .map(JavaModuleDescriptor::name)
+                            .filter(Objects::nonNull)
+                            .filter(module -> module.startsWith(JAVAFX_PREFIX) && !module.endsWith("Empty"))
+                            .collect(Collectors.joining(","));
+                    commandArguments.add(" " + modules);
+                }
             }
         }
 
-        if (classpathElements != null && !classpathElements.isEmpty()) {
+        if (classpathElements != null && (oldJDK || !classpathElements.isEmpty())) {
             commandArguments.add(" -classpath");
             String classpath = "";
-            if (moduleDescriptor != null) {
+            if (oldJDK || moduleDescriptor != null) {
                 classpath = project.getBuild().getOutputDirectory() + File.pathSeparator;
             }
             classpath += StringUtils.join(classpathElements.iterator(), File.pathSeparator);
