@@ -57,21 +57,23 @@ class Compile {
                 goal("resources"),
                 configuration(),
                 env);
-
-        executeMojo(
-                plugin(groupId("org.apache.maven.plugins"),
-                        artifactId("maven-compiler-plugin"),
-                        version("3.8.1")),
+        
+        Element[] config = new Element[release == null ? 3 : 4];
+        config[0] = element(name("source"), source);
+        config[1] = element(name("target"), target);
+        config[2] = element(name("compilerArgs"), compilerArgs.stream()
+                                        .filter(Objects::nonNull)
+                                        .map(s -> new Element("arg", s))
+                                        .toArray(Element[]::new));
+        if (release != null) {
+            config[3] = element(name("release"), release);
+        }
+        
+        executeMojo(plugin(groupId("org.apache.maven.plugins"),
+                artifactId("maven-compiler-plugin"),
+                version("3.8.1")),
                 goal("compile"),
-                configuration(
-                        element(name("source"), source),
-                        element(name("target"), target),
-                        element(name("release"), release),
-                        element(name("compilerArgs"), compilerArgs.stream()
-                                .filter(Objects::nonNull)
-                                .map(s -> new Element("arg", s))
-                                .toArray(Element[]::new))
-                ),
+                configuration(config),
                 env);
     }
 }

@@ -319,7 +319,11 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
         if (compilerArgs == null) {
             compilerArgs = new ArrayList<>();
         }
-        Compile.compile(project, session, pluginManager, source, target, release, compilerArgs);
+        String specifyRelease = release;
+        if (System.getProperty("java.version").startsWith("1.8")) {
+            specifyRelease = null;
+        }
+        Compile.compile(project, session, pluginManager, source, target, specifyRelease, compilerArgs);
     }
 
     void handleWorkingDirectory() throws MojoExecutionException {
