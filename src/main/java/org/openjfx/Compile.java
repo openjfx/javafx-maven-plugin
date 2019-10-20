@@ -44,7 +44,7 @@ class Compile {
 
     public static void compile(MavenProject project, MavenSession session, BuildPluginManager pluginManager,
                                String source, String target, String release,
-                               List<String> compilerArgs) throws MojoExecutionException {
+                               List<String> compilerArgs, List<String> excludes) throws MojoExecutionException {
         MojoExecutor.ExecutionEnvironment env = executionEnvironment(
                 project,
                 session,
@@ -58,15 +58,22 @@ class Compile {
                 configuration(),
                 env);
         
-        Element[] config = new Element[release == null ? 3 : 4];
+        Element[] config = new Element[release == null ? 4 : 5];
         config[0] = element(name("source"), source);
         config[1] = element(name("target"), target);
         config[2] = element(name("compilerArgs"), compilerArgs.stream()
-                                        .filter(Objects::nonNull)
-                                        .map(s -> new Element("arg", s))
-                                        .toArray(Element[]::new));
+                .filter(Objects::nonNull)
+                .map(s -> new Element("arg", s))
+                .toArray(Element[]::new));
+        if (release == null && ! excludes.contains("module-info.java")) {
+            excludes.add("module-info.java");
+        }
+        config[3] = element(name("excludes"), excludes.stream()
+                .filter(Objects::nonNull)
+                .map(s -> new Element("exclude", s))
+                .toArray(Element[]::new));
         if (release != null) {
-            config[3] = element(name("release"), release);
+            config[4] = element(name("release"), release);
         }
         
         executeMojo(plugin(groupId("org.apache.maven.plugins"),

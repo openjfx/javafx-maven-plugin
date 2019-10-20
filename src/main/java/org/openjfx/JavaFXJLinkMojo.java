@@ -141,6 +141,11 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
             getLog().info( "skipping execute as per configuration" );
             return;
         }
+        
+        if (isOldJDK()) {
+            getLog().info("Jlink not supported with Java 1.8");
+            return;
+        }
 
         if (jlinkExecutable == null) {
             throw new MojoExecutionException("The parameter 'jlinkExecutable' is missing or invalid");

@@ -124,6 +124,12 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
     List<?> options;
 
     /**
+     * A list of excluded classes passed to the compiler.
+     */
+    @Parameter
+    private List<String> excludes;
+    
+    /**
      * Arguments separated by space for the executed program. For example: "-j 20"
      */
     @Parameter(property = "javafx.args")
@@ -165,6 +171,10 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
     Map<String, JavaModuleDescriptor> pathElements;
     JavaModuleDescriptor moduleDescriptor;
     private ProcessDestroyer processDestroyer;
+    
+    static boolean isOldJDK() {
+        return System.getProperty("java.version").startsWith("1.8");
+    }
 
     void preparePaths() throws MojoExecutionException, MojoFailureException {
         if (project == null) {
@@ -210,7 +220,7 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
             }
             resolvePathsResult = locationManager.resolvePaths(fileResolvePathsRequest);
 
-            if (!resolvePathsResult.getPathExceptions().isEmpty()) {
+            if (!resolvePathsResult.getPathExceptions().isEmpty() && ! isOldJDK()) {
                 // for each path exception, show a warning to plugin user...
                 for (Map.Entry<File, Exception> pathException : resolvePathsResult.getPathExceptions().entrySet()) {
                     Throwable cause = pathException.getValue();
@@ -314,16 +324,16 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
                 .distinct()
                 .collect(Collectors.toList());
     }
-
+    
     void compile() throws MojoExecutionException {
         if (compilerArgs == null) {
             compilerArgs = new ArrayList<>();
         }
-        String specifyRelease = release;
-        if (System.getProperty("java.version").startsWith("1.8")) {
-            specifyRelease = null;
+        if (excludes == null) {
+            excludes = new ArrayList<>();
         }
-        Compile.compile(project, session, pluginManager, source, target, specifyRelease, compilerArgs);
+        String specifyRelease = isOldJDK() ? null : release;
+        Compile.compile(project, session, pluginManager, source, target, specifyRelease, compilerArgs, excludes);
     }
 
     void handleWorkingDirectory() throws MojoExecutionException {
