@@ -128,7 +128,7 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
      */
     @Parameter
     private List<String> excludes;
-    
+
     /**
      * Arguments separated by space for the executed program. For example: "-j 20"
      */
@@ -171,7 +171,7 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
     Map<String, JavaModuleDescriptor> pathElements;
     JavaModuleDescriptor moduleDescriptor;
     private ProcessDestroyer processDestroyer;
-    
+
     static boolean isOldJDK() {
         return System.getProperty("java.version").startsWith("1.8");
     }
@@ -324,7 +324,7 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
                 .distinct()
                 .collect(Collectors.toList());
     }
-    
+
     void compile() throws MojoExecutionException {
         if (compilerArgs == null) {
             compilerArgs = new ArrayList<>();
