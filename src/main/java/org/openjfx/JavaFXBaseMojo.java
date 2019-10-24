@@ -220,7 +220,7 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
             }
             resolvePathsResult = locationManager.resolvePaths(fileResolvePathsRequest);
 
-            if (!resolvePathsResult.getPathExceptions().isEmpty() && ! isOldJDK()) {
+            if (!resolvePathsResult.getPathExceptions().isEmpty() && !isOldJDK()) {
                 // for each path exception, show a warning to plugin user...
                 for (Map.Entry<File, Exception> pathException : resolvePathsResult.getPathExceptions().entrySet()) {
                     Throwable cause = pathException.getValue();
