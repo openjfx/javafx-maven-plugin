@@ -142,7 +142,7 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
             return;
         }
         
-        if (isOldJDK()) {
+        if (isMavenUsingJava8()) {
             getLog().info("Jlink not supported with Java 1.8");
             return;
         }

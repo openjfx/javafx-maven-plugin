@@ -70,7 +70,7 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
             Map<String, String> enviro = handleSystemEnvVariables();
             CommandLine commandLine = getExecutablePath(executable, enviro, workingDirectory);
             
-            boolean usingOldJDK = isOldJDK(commandLine);
+            boolean usingOldJDK = isTargetUsingJava8(commandLine);
 
             List<String> commandArguments = new ArrayList<>();
             handleArguments(usingOldJDK, commandArguments);
@@ -119,7 +119,7 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
 
     }
 
-    private static boolean isOldJDK(CommandLine commandLine) {
+    private static boolean isTargetUsingJava8(CommandLine commandLine) {
         final String java = commandLine.getExecutable();
         if (java == null) {
             return false;

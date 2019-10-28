@@ -172,7 +172,7 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
     JavaModuleDescriptor moduleDescriptor;
     private ProcessDestroyer processDestroyer;
 
-    static boolean isOldJDK() {
+    static boolean isMavenUsingJava8() {
         return System.getProperty("java.version").startsWith("1.8");
     }
 
@@ -220,7 +220,7 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
             }
             resolvePathsResult = locationManager.resolvePaths(fileResolvePathsRequest);
 
-            if (!resolvePathsResult.getPathExceptions().isEmpty() && !isOldJDK()) {
+            if (!resolvePathsResult.getPathExceptions().isEmpty() && !isMavenUsingJava8()) {
                 // for each path exception, show a warning to plugin user...
                 for (Map.Entry<File, Exception> pathException : resolvePathsResult.getPathExceptions().entrySet()) {
                     Throwable cause = pathException.getValue();
@@ -332,7 +332,7 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
         if (excludes == null) {
             excludes = new ArrayList<>();
         }
-        String specifyRelease = isOldJDK() ? null : release;
+        String specifyRelease = isMavenUsingJava8() ? null : release;
         Compile.compile(project, session, pluginManager, source, target, specifyRelease, compilerArgs, excludes);
     }
 
