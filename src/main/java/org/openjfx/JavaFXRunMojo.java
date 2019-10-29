@@ -58,7 +58,7 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
             return;
         }
 
-        if (javaHome != null && "java".equalsIgnoreCase(executable)) {
+        if (javaHome != null && JAVA.equals(executable)) {
             executable = getPathFor(JAVA);
         }
 

@@ -144,7 +144,7 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
             return;
         }
 
-        if (javaHome != null && "jlink".equalsIgnoreCase(jlinkExecutable)) {
+        if (javaHome != null && JLINK.equals(jlinkExecutable)) {
             jlinkExecutable = getPathFor(JLINK);
         }
 

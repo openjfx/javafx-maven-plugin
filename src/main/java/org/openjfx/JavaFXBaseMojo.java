@@ -188,6 +188,10 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
         Executable(String executable) {
             this.executable = executable;
         }
+        
+        public boolean equals(String executable) {
+            return this.executable.equalsIgnoreCase(executable);
+        }
 
         @Override
         public String toString() {
@@ -386,7 +390,7 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
         if (!isTargetUsingJava8(commandLine)) {
             elements.put("release", release);
         }
-        if (!"javac".equalsIgnoreCase(javacExecutable)) {
+        if (!JAVAC.equals(javacExecutable)) {
             elements.put("executable", javacExecutable);
             elements.put("fork", "true");
         }

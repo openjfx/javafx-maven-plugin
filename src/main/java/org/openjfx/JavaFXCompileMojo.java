@@ -42,7 +42,7 @@ public class JavaFXCompileMojo extends JavaFXBaseMojo {
 
         CommandLine commandLine;
 
-        if (javaHome != null && "javac".equalsIgnoreCase(javacExecutable)) {
+        if (javaHome != null && JAVAC.equals(javacExecutable)) {
             javacExecutable = getPathFor(JAVAC);
         }
 
