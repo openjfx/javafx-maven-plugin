@@ -46,6 +46,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -211,18 +212,7 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
 
     static boolean isTargetUsingJava8(CommandLine commandLine) {
         final String java = commandLine.getExecutable();
-        if (java == null) {
-            return false;
-        }
-        final File bin = new File(java).getParentFile();
-        if (bin == null) {
-            return false;
-        }
-        final File jre = bin.getParentFile();
-        if (jre == null) {
-            return false;
-        }
-        return new File(new File(jre, "lib"), "rt.jar").exists();
+        return java != null && Files.exists(Paths.get(java).resolve("../../jre/lib/rt.jar").normalize());
     }
 
     void preparePaths() throws MojoExecutionException, MojoFailureException {
