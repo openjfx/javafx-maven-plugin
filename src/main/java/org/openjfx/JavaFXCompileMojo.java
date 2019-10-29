@@ -16,16 +16,40 @@
 
 package org.openjfx;
 
+import org.apache.commons.exec.CommandLine;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
+
+import static org.openjfx.JavaFXBaseMojo.Executable.JAVAC;
 
 @Mojo(name = "compile", defaultPhase = LifecyclePhase.COMPILE,
         requiresDependencyResolution = ResolutionScope.COMPILE)
 public class JavaFXCompileMojo extends JavaFXBaseMojo {
 
+    /**
+     * <p>
+     * The executable. Can be a full path or the name of the executable.
+     * In the latter case, the executable must be in the PATH for the execution to work.
+     * </p>
+     */
+    @Parameter(property = "javafx.javacExecutable", defaultValue = "javac")
+    private String javacExecutable;
+
     public void execute() throws MojoExecutionException {
-        compile();
+
+        CommandLine commandLine;
+
+        if (javaHome != null && "javac".equalsIgnoreCase(javacExecutable)) {
+            javacExecutable = getPathFor(JAVAC);
+        }
+
+        if (javacExecutable == null) {
+            throw new MojoExecutionException("The parameter 'executable' is missing or invalid");
+        }
+
+        compile(javacExecutable);
     }
 }

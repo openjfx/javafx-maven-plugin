@@ -24,7 +24,9 @@ import org.twdata.maven.mojoexecutor.MojoExecutor;
 import org.twdata.maven.mojoexecutor.MojoExecutor.Element;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
@@ -43,7 +45,7 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 class Compile {
 
     public static void compile(MavenProject project, MavenSession session, BuildPluginManager pluginManager,
-                               String source, String target, String release,
+                               Map<String, String> elements,
                                List<String> compilerArgs, List<String> excludes) throws MojoExecutionException {
         MojoExecutor.ExecutionEnvironment env = executionEnvironment(
                 project,
@@ -58,29 +60,26 @@ class Compile {
                 configuration(),
                 env);
         
-        Element[] config = new Element[release == null ? 4 : 5];
-        config[0] = element(name("source"), source);
-        config[1] = element(name("target"), target);
-        config[2] = element(name("compilerArgs"), compilerArgs.stream()
+        final List<Element> config = elements.entrySet().stream()
+                .map(entry -> element(name(entry.getKey()), entry.getValue()))
+                .collect(Collectors.toList());
+        config.add(element(name("compilerArgs"), compilerArgs.stream()
                 .filter(Objects::nonNull)
                 .map(s -> new Element("arg", s))
-                .toArray(Element[]::new));
-        if (release == null && !excludes.contains("module-info.java")) {
+                .toArray(Element[]::new)));
+        if (elements.containsKey("release") && elements.get("release") == null && !excludes.contains("module-info.java")) {
             excludes.add("module-info.java");
         }
-        config[3] = element(name("excludes"), excludes.stream()
+        config.add(element(name("excludes"), excludes.stream()
                 .filter(Objects::nonNull)
                 .map(s -> new Element("exclude", s))
-                .toArray(Element[]::new));
-        if (release != null) {
-            config[4] = element(name("release"), release);
-        }
+                .toArray(Element[]::new)));
         
         executeMojo(plugin(groupId("org.apache.maven.plugins"),
                 artifactId("maven-compiler-plugin"),
                 version("3.8.1")),
                 goal("compile"),
-                configuration(config),
+                configuration(config.toArray(new Element[config.size()])),
                 env);
     }
 }

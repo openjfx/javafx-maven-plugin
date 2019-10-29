@@ -38,6 +38,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static org.openjfx.JavaFXBaseMojo.Executable.JAVA;
+
 @Mojo(name = "run", requiresDependencyResolution = ResolutionScope.RUNTIME)
 public class JavaFXRunMojo extends JavaFXBaseMojo {
 
@@ -56,6 +58,10 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
             return;
         }
 
+        if (javaHome != null && "java".equalsIgnoreCase(executable)) {
+            executable = getPathFor(JAVA);
+        }
+
         if (executable == null) {
             throw new MojoExecutionException("The parameter 'executable' is missing or invalid");
         }
@@ -66,10 +72,10 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
 
         try {
             handleWorkingDirectory();
-            
+
             Map<String, String> enviro = handleSystemEnvVariables();
             CommandLine commandLine = getExecutablePath(executable, enviro, workingDirectory);
-            
+
             boolean usingOldJDK = isTargetUsingJava8(commandLine);
 
             List<String> commandArguments = new ArrayList<>();
@@ -116,23 +122,6 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
         } catch (Exception e) {
             throw new MojoExecutionException("Error", e);
         }
-
-    }
-
-    private static boolean isTargetUsingJava8(CommandLine commandLine) {
-        final String java = commandLine.getExecutable();
-        if (java == null) {
-            return false;
-        }
-        final File bin = new File(java).getParentFile();
-        if (bin == null) {
-            return false;
-        }
-        final File jre = bin.getParentFile();
-        if (jre == null) {
-            return false;
-        }
-        return new File(new File(jre, "lib"), "rt.jar").exists();
     }
 
     private void handleArguments(boolean oldJDK, List<String> commandArguments) throws MojoExecutionException, MojoFailureException {
@@ -146,7 +135,6 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
                     .forEach(commandArguments::add);
         }
         if (!oldJDK) {
-
             if (modulepathElements != null && !modulepathElements.isEmpty()) {
                 commandArguments.add(" --module-path");
                 String modulePath = StringUtils.join(modulepathElements.iterator(), File.pathSeparator);

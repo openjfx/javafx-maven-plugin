@@ -46,6 +46,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -56,6 +57,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static org.openjfx.JavaFXBaseMojo.Executable.JAVAC;
 
 abstract class JavaFXBaseMojo extends AbstractMojo {
 
@@ -136,6 +139,12 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
     String commandlineArgs;
 
     /**
+     * Path for Java home to be used for javac, java and jlink commands
+     */
+    @Parameter(property = "javafx.javaHome")
+    String javaHome;
+
+    /**
      * <p>The -source argument for the Java compiler.</p>
      */
     @Parameter(property = "javafx.source", defaultValue = "11")
@@ -166,6 +175,26 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
     @Parameter(property = "javafx.includePathExceptionsInClasspath", defaultValue = "false")
     private boolean includePathExceptionsInClasspath;
 
+    /**
+     * Executables to be used by the plugin
+     */
+    enum Executable {
+        JAVA("java"),
+        JAVAC("javac"),
+        JLINK("jlink");
+
+        private final String executable;
+
+        Executable(String executable) {
+            this.executable = executable;
+        }
+
+        @Override
+        public String toString() {
+            return executable;
+        }
+    }
+
     List<String> classpathElements;
     List<String> modulepathElements;
     Map<String, JavaModuleDescriptor> pathElements;
@@ -174,6 +203,22 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
 
     static boolean isMavenUsingJava8() {
         return System.getProperty("java.version").startsWith("1.8");
+    }
+
+    static boolean isTargetUsingJava8(CommandLine commandLine) {
+        final String java = commandLine.getExecutable();
+        if (java == null) {
+            return false;
+        }
+        final File bin = new File(java).getParentFile();
+        if (bin == null) {
+            return false;
+        }
+        final File jre = bin.getParentFile();
+        if (jre == null) {
+            return false;
+        }
+        return new File(new File(jre, "lib"), "rt.jar").exists();
     }
 
     void preparePaths() throws MojoExecutionException, MojoFailureException {
@@ -189,7 +234,7 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
         File[] classes = new File(outputDirectory).listFiles();
         if (classes == null || classes.length == 0) {
             getLog().debug("Output directory was empty, compiling...");
-            compile();
+            compile(getPathFor(JAVAC));
             classes = new File(outputDirectory).listFiles();
             if (classes == null || classes.length == 0) {
                 throw new MojoExecutionException("Output directory is empty, compile first");
@@ -325,15 +370,27 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
                 .collect(Collectors.toList());
     }
 
-    void compile() throws MojoExecutionException {
+    void compile(String javacExecutable) throws MojoExecutionException {
         if (compilerArgs == null) {
             compilerArgs = new ArrayList<>();
         }
         if (excludes == null) {
             excludes = new ArrayList<>();
         }
-        String specifyRelease = isMavenUsingJava8() ? null : release;
-        Compile.compile(project, session, pluginManager, source, target, specifyRelease, compilerArgs, excludes);
+        Map<String, String> elements = new HashMap<>();
+        elements.put("source", source);
+        elements.put("target", target);
+        
+        Map<String, String> enviro = handleSystemEnvVariables();
+        CommandLine commandLine = getExecutablePath(javacExecutable, enviro, workingDirectory);
+        if (!isTargetUsingJava8(commandLine)) {
+            elements.put("release", release);
+        }
+        if (!"javac".equalsIgnoreCase(javacExecutable)) {
+            elements.put("executable", javacExecutable);
+            elements.put("fork", "true");
+        }
+        Compile.compile(project, session, pluginManager, elements, compilerArgs, excludes);
     }
 
     void handleWorkingDirectory() throws MojoExecutionException {
@@ -402,6 +459,32 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
         return toRet;
     }
 
+    /**
+     * Returns the path for an {@link Executable}.
+     * @param executable The executable for which path is to be returned. 
+     * @return Path for the specified executable.
+     */
+    String getPathFor(Executable executable) {
+        if (javaHome == null) {
+            return executable.toString();
+        }
+        return Paths.get(javaHome, "bin", executable.toString()).toString();
+    }
+
+    int executeCommandLine(Executor exec, CommandLine commandLine, Map<String, String> enviro,
+                           OutputStream out, OutputStream err) throws ExecuteException, IOException {
+        // note: don't use BufferedOutputStream here since it delays the outputs MEXEC-138
+        PumpStreamHandler psh = new PumpStreamHandler(out, err, System.in);
+        return executeCommandLine(exec, commandLine, enviro, psh);
+    }
+
+    int executeCommandLine(Executor exec, CommandLine commandLine, Map<String, String> enviro,
+                           FileOutputStream outputFile) throws ExecuteException, IOException {
+        BufferedOutputStream bos = new BufferedOutputStream(outputFile);
+        PumpStreamHandler psh = new PumpStreamHandler(bos);
+        return executeCommandLine(exec, commandLine, enviro, psh);
+    }
+
     private static String findExecutable(final String executable, final List<String> paths) {
         File f = null;
         search: for (final String path : paths) {
@@ -458,20 +541,6 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
 
     private String getJavaHome(Map<String, String> enviro) {
         return enviro.get("JAVA_HOME");
-    }
-
-    int executeCommandLine(Executor exec, CommandLine commandLine, Map<String, String> enviro,
-                                     OutputStream out, OutputStream err) throws ExecuteException, IOException {
-        // note: don't use BufferedOutputStream here since it delays the outputs MEXEC-138
-        PumpStreamHandler psh = new PumpStreamHandler(out, err, System.in);
-        return executeCommandLine(exec, commandLine, enviro, psh);
-    }
-
-    int executeCommandLine(Executor exec, CommandLine commandLine, Map<String, String> enviro,
-                                   FileOutputStream outputFile) throws ExecuteException, IOException {
-        BufferedOutputStream bos = new BufferedOutputStream(outputFile);
-        PumpStreamHandler psh = new PumpStreamHandler(bos);
-        return executeCommandLine(exec, commandLine, enviro, psh);
     }
 
     private int executeCommandLine(Executor exec, final CommandLine commandLine, Map<String, String> enviro,

@@ -45,6 +45,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static org.openjfx.JavaFXBaseMojo.Executable.JLINK;
+
 @Mojo(name = "jlink", requiresDependencyResolution = ResolutionScope.RUNTIME)
 public class JavaFXJLinkMojo extends JavaFXBaseMojo {
 
@@ -141,10 +143,9 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
             getLog().info( "skipping execute as per configuration" );
             return;
         }
-        
-        if (isMavenUsingJava8()) {
-            getLog().info("Jlink not supported with Java 1.8");
-            return;
+
+        if (javaHome != null && "jlink".equalsIgnoreCase(jlinkExecutable)) {
+            jlinkExecutable = getPathFor(JLINK);
         }
 
         if (jlinkExecutable == null) {
@@ -155,14 +156,20 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
             throw new IllegalStateException( "basedir is null. Should not be possible." );
         }
 
+        Map<String, String> enviro = handleSystemEnvVariables();
+        CommandLine commandLine = getExecutablePath(jlinkExecutable, enviro, workingDirectory);
+
+        if (isTargetUsingJava8(commandLine)) {
+            getLog().info("Jlink not supported with Java 1.8");
+            return;
+        }
+
         try {
             handleWorkingDirectory();
 
             List<String> commandArguments = new ArrayList<>();
             handleArguments(commandArguments);
 
-            Map<String, String> enviro = handleSystemEnvVariables();
-            CommandLine commandLine = getExecutablePath(jlinkExecutable, enviro, workingDirectory);
             String[] args = commandArguments.toArray(new String[commandArguments.size()]);
             commandLine.addArguments(args, false);
             getLog().debug("Executing command line: " + commandLine);
@@ -245,7 +252,6 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
         } catch (Exception e) {
             throw new MojoExecutionException("Error", e);
         }
-
     }
 
     private void handleArguments(List<String> commandArguments) throws MojoExecutionException, MojoFailureException {
