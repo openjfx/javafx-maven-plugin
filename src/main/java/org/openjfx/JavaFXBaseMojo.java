@@ -440,7 +440,7 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
         }
 
         if (exec == null) {
-            String javaHome = System.getProperty("java.home", getJavaHome(enviro));
+            String javaHome = getJavaHome(enviro);
             if (javaHome != null && ! javaHome.isEmpty()) {
                 exec = findExecutable(executable, Arrays.asList(javaHome.concat(File.separator).concat("bin")));
             }
