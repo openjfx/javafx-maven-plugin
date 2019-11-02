@@ -45,6 +45,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static org.openjfx.JavaFXBaseMojo.Executable.JAVAC;
 import static org.openjfx.JavaFXBaseMojo.Executable.JLINK;
 
 @Mojo(name = "jlink", requiresDependencyResolution = ResolutionScope.RUNTIME)
@@ -255,7 +256,11 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
     }
 
     private void handleArguments(List<String> commandArguments) throws MojoExecutionException, MojoFailureException {
-        preparePaths();
+        String javacPath = getPathFor(JAVAC);
+        if (!JLINK.equals(jlinkExecutable)) {
+            javacPath = getJavacPathFromExecutable(jlinkExecutable);
+        }
+        preparePaths(javacPath);
 
         if (modulepathElements != null && !modulepathElements.isEmpty()) {
             commandArguments.add(" --module-path");

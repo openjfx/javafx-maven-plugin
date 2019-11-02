@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.openjfx;
 
 import org.apache.commons.exec.CommandLine;
@@ -39,6 +38,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static org.openjfx.JavaFXBaseMojo.Executable.JAVA;
+import static org.openjfx.JavaFXBaseMojo.Executable.JAVAC;
 
 @Mojo(name = "run", requiresDependencyResolution = ResolutionScope.RUNTIME)
 public class JavaFXRunMojo extends JavaFXBaseMojo {
@@ -125,7 +125,11 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
     }
 
     private void handleArguments(boolean oldJDK, List<String> commandArguments) throws MojoExecutionException, MojoFailureException {
-        preparePaths();
+        String javacPath = getPathFor(JAVAC);
+        if (!JAVA.equals(executable)) {
+            javacPath = getJavacPathFromExecutable(executable);
+        }
+        preparePaths(javacPath);
 
         if (options != null) {
             options.stream()

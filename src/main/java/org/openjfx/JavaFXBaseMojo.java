@@ -29,7 +29,6 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
@@ -215,7 +214,7 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
         return java != null && Files.exists(Paths.get(java).resolve("../../jre/lib/rt.jar").normalize());
     }
 
-    void preparePaths() throws MojoExecutionException, MojoFailureException {
+    void preparePaths(String javacExecutable) throws MojoExecutionException {
         if (project == null) {
             return;
         }
@@ -228,7 +227,7 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
         File[] classes = new File(outputDirectory).listFiles();
         if (classes == null || classes.length == 0) {
             getLog().debug("Output directory was empty, compiling...");
-            compile(getPathFor(JAVAC));
+            compile(javacExecutable);
             classes = new File(outputDirectory).listFiles();
             if (classes == null || classes.length == 0) {
                 throw new MojoExecutionException("Output directory is empty, compile first");
@@ -338,6 +337,15 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
         pathElements.forEach((k, v) -> getLog().debug(" " + k + " :: " + (v != null && v.name() != null ? v.name() : v)));
     }
 
+    /**
+     * Returns the javac path from executable path of java or jlink
+     * @param executable Path of either java or jlink executable
+     * @return javac path relative to either java or jlink executable
+     */
+    String getJavacPathFromExecutable(String executable) {
+        return executable.substring(0, executable.lastIndexOf("/") + 1) + JAVAC.toString();
+    }
+
     private List<File> getCompileClasspathElements(MavenProject project) {
         List<File> list = new ArrayList<>();
         list.add(new File(project.getBuild().getOutputDirectory()));
@@ -365,6 +373,7 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
     }
 
     void compile(String javacExecutable) throws MojoExecutionException {
+        getLog().info(javacExecutable);
         if (compilerArgs == null) {
             compilerArgs = new ArrayList<>();
         }
@@ -372,14 +381,16 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
             excludes = new ArrayList<>();
         }
         Map<String, String> elements = new HashMap<>();
-        elements.put("source", source);
-        elements.put("target", target);
-        
         Map<String, String> enviro = handleSystemEnvVariables();
         CommandLine commandLine = getExecutablePath(javacExecutable, enviro, workingDirectory);
-        if (!isTargetUsingJava8(commandLine)) {
+        if (isTargetUsingJava8(commandLine)) {
+            target = "8";
+            source = "8";
+        } else {
             elements.put("release", release);
         }
+        elements.put("source", source);
+        elements.put("target", target);
         if (!JAVAC.equals(javacExecutable)) {
             elements.put("executable", javacExecutable);
             elements.put("fork", "true");
