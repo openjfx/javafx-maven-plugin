@@ -67,7 +67,7 @@ class Compile {
                 .filter(Objects::nonNull)
                 .map(s -> new Element("arg", s))
                 .toArray(Element[]::new)));
-        if (elements.containsKey("release") && elements.get("release") == null && !excludes.contains("module-info.java")) {
+        if (!elements.containsKey("release") && elements.get("release") == null && !excludes.contains("module-info.java")) {
             excludes.add("module-info.java");
         }
         config.add(element(name("excludes"), excludes.stream()
