@@ -440,9 +440,9 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
         }
 
         if (exec == null) {
-            String javaHome = getJavaHome(enviro);
-            if (javaHome != null && ! javaHome.isEmpty()) {
-                exec = findExecutable(executable, Arrays.asList(javaHome.concat(File.separator).concat("bin")));
+            String javaHomeFromEnv = getJavaHomeEnv(enviro);
+            if (javaHomeFromEnv != null && ! javaHomeFromEnv.isEmpty()) {
+                exec = findExecutable(executable, Arrays.asList(javaHomeFromEnv.concat(File.separator).concat("bin")));
             }
         }
 
@@ -544,7 +544,7 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
         return paths;
     }
 
-    private String getJavaHome(Map<String, String> enviro) {
+    private String getJavaHomeEnv(Map<String, String> enviro) {
         return enviro.get("JAVA_HOME");
     }
 
