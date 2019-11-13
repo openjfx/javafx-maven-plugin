@@ -357,17 +357,17 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
             exec = execFile.getAbsolutePath();
         }
 
-        if (exec == null && OS.isFamilyWindows()) {
-            List<String> paths = this.getExecutablePaths(enviro);
-            paths.add(0, dir.getAbsolutePath());
-            exec = findExecutable(executable, paths);
-        }
-
         if (exec == null) {
             String javaHome = System.getProperty("java.home", getJavaHome(enviro));
             if (javaHome != null && ! javaHome.isEmpty()) {
                 exec = findExecutable(executable, Arrays.asList(javaHome.concat(File.separator).concat("bin")));
             }
+        }
+
+        if (exec == null && OS.isFamilyWindows()) {
+            List<String> paths = this.getExecutablePaths(enviro);
+            paths.add(0, dir.getAbsolutePath());
+            exec = findExecutable(executable, paths);
         }
 
         if (exec == null) {
