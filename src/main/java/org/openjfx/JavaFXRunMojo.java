@@ -50,7 +50,7 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
      * the PATH for the execution to work.
      * </p>
      */
-    @Parameter(property = "javafx.executable", defaultValue = "java.exe")
+    @Parameter(property = "javafx.executable", defaultValue = "java")
     private String executable;
 
     public void execute() throws MojoExecutionException {
