@@ -148,12 +148,6 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
     private String release;
 
     /**
-     * A list of arguments passed to the compiler.
-     */
-    @Parameter
-    private List<String> compilerArgs;
-
-    /**
      * If set to true, it will include the dependencies that
      * generate path exceptions in the classpath. Default is false.
      */
@@ -179,7 +173,6 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
         File[] classes = new File(outputDirectory).listFiles();
         if (classes == null || classes.length == 0) {
             getLog().debug("Output directory was empty, compiling...");
-            compile();
             classes = new File(outputDirectory).listFiles();
             if (classes == null || classes.length == 0) {
                 throw new MojoExecutionException("Output directory is empty, compile first");
@@ -313,13 +306,6 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
         return list.stream()
                 .distinct()
                 .collect(Collectors.toList());
-    }
-
-    void compile() throws MojoExecutionException {
-        if (compilerArgs == null) {
-            compilerArgs = new ArrayList<>();
-        }
-        Compile.compile(project, session, pluginManager, source, target, release, compilerArgs);
     }
 
     void handleWorkingDirectory() throws MojoExecutionException {
