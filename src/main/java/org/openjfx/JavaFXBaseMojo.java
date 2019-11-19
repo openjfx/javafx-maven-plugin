@@ -163,12 +163,6 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
     private String release;
 
     /**
-     * A list of arguments passed to the compiler.
-     */
-    @Parameter
-    private List<String> compilerArgs;
-
-    /**
      * If set to true, it will include the dependencies that
      * generate path exceptions in the classpath. Default is false.
      */
@@ -227,7 +221,6 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
         File[] classes = new File(outputDirectory).listFiles();
         if (classes == null || classes.length == 0) {
             getLog().debug("Output directory was empty, compiling...");
-            compile(javacExecutable);
             classes = new File(outputDirectory).listFiles();
             if (classes == null || classes.length == 0) {
                 throw new MojoExecutionException("Output directory is empty, compile first");
@@ -370,32 +363,6 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
         return list.stream()
                 .distinct()
                 .collect(Collectors.toList());
-    }
-
-    void compile(String javacExecutable) throws MojoExecutionException {
-        getLog().info(javacExecutable);
-        if (compilerArgs == null) {
-            compilerArgs = new ArrayList<>();
-        }
-        if (excludes == null) {
-            excludes = new ArrayList<>();
-        }
-        Map<String, String> elements = new HashMap<>();
-        Map<String, String> enviro = handleSystemEnvVariables();
-        CommandLine commandLine = getExecutablePath(javacExecutable, enviro, workingDirectory);
-        if (isTargetUsingJava8(commandLine)) {
-            target = "8";
-            source = "8";
-        } else {
-            elements.put("release", release);
-        }
-        elements.put("source", source);
-        elements.put("target", target);
-        if (!JAVAC.equals(javacExecutable)) {
-            elements.put("executable", javacExecutable);
-            elements.put("fork", "true");
-        }
-        Compile.compile(project, session, pluginManager, elements, compilerArgs, excludes);
     }
 
     void handleWorkingDirectory() throws MojoExecutionException {

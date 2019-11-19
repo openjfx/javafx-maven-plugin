@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component-set>
+  <components>
+    <component>
+      <role>org.apache.maven.lifecycle.Lifecycle</role>
+      <implementation>org.apache.maven.lifecycle.Lifecycle</implementation>
+      <role-hint>run</role-hint>
+      <configuration>
+        <id>run</id>
+        <phases>
+          <phase>run</phase>
+        </phases>
+        <default-phases>
+          <run>
+            org.openjfx:javafx-maven-plugin:run
+          </run>
+        </default-phases>
+      </configuration>
+    </component>
+  </components>
+</component-set>
