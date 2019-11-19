@@ -58,8 +58,6 @@ import java.util.Properties;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.openjfx.JavaFXBaseMojo.Executable.JAVAC;
-
 abstract class JavaFXBaseMojo extends AbstractMojo {
 
     static final String JAVAFX_PREFIX = "javafx";
@@ -139,12 +137,6 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
     String commandlineArgs;
 
     /**
-     * Path for Java home to be used for javac, java and jlink commands
-     */
-    @Parameter(property = "javafx.javaHome")
-    String javaHome;
-
-    /**
      * <p>The -source argument for the Java compiler.</p>
      */
     @Parameter(property = "javafx.source", defaultValue = "11")
@@ -169,30 +161,6 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
     @Parameter(property = "javafx.includePathExceptionsInClasspath", defaultValue = "false")
     private boolean includePathExceptionsInClasspath;
 
-    /**
-     * Executables to be used by the plugin
-     */
-    enum Executable {
-        JAVA("java"),
-        JAVAC("javac"),
-        JLINK("jlink");
-
-        private final String executable;
-
-        Executable(String executable) {
-            this.executable = executable;
-        }
-        
-        public boolean equals(String executable) {
-            return this.executable.equalsIgnoreCase(executable);
-        }
-
-        @Override
-        public String toString() {
-            return executable;
-        }
-    }
-
     List<String> classpathElements;
     List<String> modulepathElements;
     Map<String, JavaModuleDescriptor> pathElements;
@@ -208,7 +176,7 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
         return java != null && Files.exists(Paths.get(java).resolve("../../jre/lib/rt.jar").normalize());
     }
 
-    void preparePaths(String javacExecutable) throws MojoExecutionException {
+    void preparePaths() throws MojoExecutionException {
         if (project == null) {
             return;
         }
@@ -330,15 +298,6 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
         pathElements.forEach((k, v) -> getLog().debug(" " + k + " :: " + (v != null && v.name() != null ? v.name() : v)));
     }
 
-    /**
-     * Returns the javac path from executable path of java or jlink
-     * @param executable Path of either java or jlink executable
-     * @return javac path relative to either java or jlink executable
-     */
-    String getJavacPathFromExecutable(String executable) {
-        return executable.substring(0, executable.lastIndexOf("/") + 1) + JAVAC.toString();
-    }
-
     private List<File> getCompileClasspathElements(MavenProject project) {
         List<File> list = new ArrayList<>();
         list.add(new File(project.getBuild().getOutputDirectory()));
@@ -429,18 +388,6 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
         }
         getLog().debug("Executable " + toRet.toString());
         return toRet;
-    }
-
-    /**
-     * Returns the path for an {@link Executable}.
-     * @param executable The executable for which path is to be returned. 
-     * @return Path for the specified executable.
-     */
-    String getPathFor(Executable executable) {
-        if (javaHome == null) {
-            return executable.toString();
-        }
-        return Paths.get(javaHome, "bin", executable.toString()).toString();
     }
 
     int executeCommandLine(Executor exec, CommandLine commandLine, Map<String, String> enviro,

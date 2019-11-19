@@ -39,9 +39,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static org.openjfx.JavaFXBaseMojo.Executable.JAVA;
-import static org.openjfx.JavaFXBaseMojo.Executable.JAVAC;
-
 @Mojo(name = "run", requiresDependencyResolution = ResolutionScope.RUNTIME)
 @Execute(phase = LifecyclePhase.PROCESS_CLASSES)
 public class JavaFXRunMojo extends JavaFXBaseMojo {
@@ -59,10 +56,6 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
         if (skip) {
             getLog().info( "skipping execute as per configuration" );
             return;
-        }
-
-        if (javaHome != null && JAVA.equals(executable)) {
-            executable = getPathFor(JAVA);
         }
 
         if (executable == null) {
@@ -128,11 +121,7 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
     }
 
     private void handleArguments(boolean oldJDK, List<String> commandArguments) throws MojoExecutionException, MojoFailureException {
-        String javacPath = getPathFor(JAVAC);
-        if (!JAVA.equals(executable)) {
-            javacPath = getJavacPathFromExecutable(executable);
-        }
-        preparePaths(javacPath);
+        preparePaths();
 
         if (options != null) {
             options.stream()
