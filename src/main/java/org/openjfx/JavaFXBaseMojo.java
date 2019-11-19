@@ -176,7 +176,7 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
         return java != null && Files.exists(Paths.get(java).resolve("../../jre/lib/rt.jar").normalize());
     }
 
-    void preparePaths() throws MojoExecutionException {
+    void preparePaths(String jdkHome) throws MojoExecutionException {
         if (project == null) {
             return;
         }
@@ -215,7 +215,10 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
             ResolvePathsResult<File> resolvePathsResult;
             if (moduleDescriptorPath != null) {
                 getLog().debug("module descriptor: " + moduleDescriptorPath);
-                fileResolvePathsRequest = fileResolvePathsRequest.setMainModuleDescriptor(moduleDescriptorPath);
+                fileResolvePathsRequest.setMainModuleDescriptor(moduleDescriptorPath);
+            }
+            if (jdkHome != null) {
+                fileResolvePathsRequest.setJdkHome(new File(jdkHome));
             }
             resolvePathsResult = locationManager.resolvePaths(fileResolvePathsRequest);
 
@@ -258,8 +261,7 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
             }
 
             getLog().debug("pathElements: " + resolvePathsResult.getPathElements().size());
-            resolvePathsResult.getPathElements().entrySet()
-                    .forEach(entry -> pathElements.put(entry.getKey().getPath(), entry.getValue()));
+            resolvePathsResult.getPathElements().forEach((key, value) -> pathElements.put(key.getPath(), value));
             getLog().debug("classpathElements: " + resolvePathsResult.getClasspathElements().size());
             resolvePathsResult.getClasspathElements()
                     .forEach(file -> classpathElements.add(file.getPath()));

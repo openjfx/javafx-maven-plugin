@@ -120,8 +120,8 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
         }
     }
 
-    private void handleArguments(boolean oldJDK, List<String> commandArguments) throws MojoExecutionException, MojoFailureException {
-        preparePaths();
+    private void handleArguments(boolean oldJDK, List<String> commandArguments) throws MojoExecutionException {
+        preparePaths("java".equals(executable) ? null : executable.replace("/bin/java", ""));
 
         if (options != null) {
             options.stream()
