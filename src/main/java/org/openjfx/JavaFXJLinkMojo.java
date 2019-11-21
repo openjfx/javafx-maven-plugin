@@ -249,7 +249,8 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
     }
 
     private void handleArguments(List<String> commandArguments) throws MojoExecutionException, MojoFailureException {
-        preparePaths("jlink".equals(jlinkExecutable) ? null : jlinkExecutable.replace("/bin/jlink",""));
+        Path jlinkPath = Paths.get(jlinkExecutable);
+        preparePaths(Files.exists(jlinkPath) ? jlinkPath.getParent().getParent() : null);
         if (modulepathElements != null && !modulepathElements.isEmpty()) {
             commandArguments.add(" --module-path");
             String modulePath = StringUtils.join(modulepathElements.iterator(), File.pathSeparator);

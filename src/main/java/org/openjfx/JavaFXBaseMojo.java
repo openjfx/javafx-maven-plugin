@@ -46,6 +46,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -176,7 +177,7 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
         return java != null && Files.exists(Paths.get(java).resolve("../../jre/lib/rt.jar").normalize());
     }
 
-    void preparePaths(String jdkHome) throws MojoExecutionException {
+    void preparePaths(Path jdkHome) throws MojoExecutionException {
         if (project == null) {
             return;
         }
@@ -218,7 +219,7 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
                 fileResolvePathsRequest.setMainModuleDescriptor(moduleDescriptorPath);
             }
             if (jdkHome != null) {
-                fileResolvePathsRequest.setJdkHome(new File(jdkHome));
+                fileResolvePathsRequest.setJdkHome(jdkHome.toFile());
             }
             resolvePathsResult = locationManager.resolvePaths(fileResolvePathsRequest);
 

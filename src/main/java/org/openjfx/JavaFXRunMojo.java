@@ -33,6 +33,9 @@ import org.codehaus.plexus.util.StringUtils;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -121,7 +124,8 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
     }
 
     private void handleArguments(boolean oldJDK, List<String> commandArguments) throws MojoExecutionException {
-        preparePaths("java".equals(executable) ? null : executable.replace("/bin/java", ""));
+        Path javaPath = Paths.get(executable);
+        preparePaths(Files.exists(javaPath) ? javaPath.getParent().getParent() : null);
 
         if (options != null) {
             options.stream()
