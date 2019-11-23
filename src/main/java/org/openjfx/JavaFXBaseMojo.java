@@ -407,6 +407,23 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
         return executeCommandLine(exec, commandLine, enviro, psh);
     }
 
+    /**
+     * Returns the path of the parent directory.
+     * At the given depth if the path has no parent, the method returns null.
+     * @param path Path against which the parent needs to be evaluated
+     * @param depth Depth of the path relative to parent
+     * @return Path to the parent, if exists. Null, otherwise.
+     */
+    static Path getParent(Path path, int depth) {
+        if (depth == 0) {
+            return path;
+        }
+        if (path != null && Files.exists(path)) {
+            return getParent(path.getParent(), depth - 1);
+        }
+        return null;
+    }
+
     private static String findExecutable(final String executable, final List<String> paths) {
         File f = null;
         search: for (final String path : paths) {

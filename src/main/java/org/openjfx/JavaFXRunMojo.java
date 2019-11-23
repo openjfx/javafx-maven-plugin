@@ -124,8 +124,7 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
     }
 
     private void handleArguments(boolean oldJDK, List<String> commandArguments) throws MojoExecutionException {
-        Path javaPath = Paths.get(executable);
-        preparePaths(Files.exists(javaPath) ? javaPath.getParent().getParent() : null);
+        preparePaths(getParent(Paths.get(executable), 2));
 
         if (options != null) {
             options.stream()
