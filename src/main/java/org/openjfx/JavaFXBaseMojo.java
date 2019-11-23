@@ -126,12 +126,6 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
     List<?> options;
 
     /**
-     * A list of excluded classes passed to the compiler.
-     */
-    @Parameter
-    private List<String> excludes;
-
-    /**
      * Arguments separated by space for the executed program. For example: "-j 20"
      */
     @Parameter(property = "javafx.args")
