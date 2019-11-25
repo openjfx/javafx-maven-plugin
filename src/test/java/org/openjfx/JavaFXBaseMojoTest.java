@@ -21,7 +21,6 @@ public class JavaFXBaseMojoTest {
     public static void setup() throws IOException {
         tempDirPath = System.getProperty("java.io.tmpdir");
         path = Files.createDirectories(Paths.get(tempDirPath, "test", "test"));
-        Files.createDirectories(path);
     }
     
     @Test
@@ -36,6 +35,11 @@ public class JavaFXBaseMojoTest {
 
     @Test
     public void invalidPathTest() {
+        Assert.assertNull(JavaFXBaseMojo.getParent(Paths.get("/some-invalid-path"), 0));
+    }
+
+    @Test
+    public void invalidPathWithDepthTest() {
         Assert.assertNull(JavaFXBaseMojo.getParent(Paths.get("/some-invalid-path"), 2));
     }
 

@@ -409,13 +409,10 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
      * @return Path to the parent, if exists. Null, otherwise.
      */
     static Path getParent(Path path, int depth) {
-        if (depth == 0) {
-            return path;
+        if (path == null || !Files.exists(path) || depth > path.getNameCount()) {
+            return null;
         }
-        if (path != null && Files.exists(path)) {
-            return getParent(path.getParent(), depth - 1);
-        }
-        return null;
+        return path.getRoot().resolve(path.subpath(0, path.getNameCount() - depth));
     }
 
     private static String findExecutable(final String executable, final List<String> paths) {
