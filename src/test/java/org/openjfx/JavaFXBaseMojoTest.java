@@ -48,6 +48,7 @@ public class JavaFXBaseMojoTest {
         Files.walk(path.getParent())
                 .sorted(Comparator.reverseOrder())
                 .map(Path::toFile)
+                .filter(f -> "test".equals(f.getName()))
                 .forEach(File::delete);
     }
 }
