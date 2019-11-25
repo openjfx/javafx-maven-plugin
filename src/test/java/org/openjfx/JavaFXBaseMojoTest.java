@@ -30,7 +30,7 @@ public class JavaFXBaseMojoTest {
 
     @Test
     public void invalidParentTest() {
-        Assert.assertNull(JavaFXBaseMojo.getParent(path, 5));
+        Assert.assertNull(JavaFXBaseMojo.getParent(path, 10));
     }
 
     @Test
