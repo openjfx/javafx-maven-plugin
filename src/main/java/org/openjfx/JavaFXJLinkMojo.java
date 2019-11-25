@@ -161,9 +161,7 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
         try {
             handleWorkingDirectory();
 
-            List<String> commandArguments = new ArrayList<>();
-            handleArguments(commandArguments);
-
+            List<String> commandArguments = createCommandArguments();
             String[] args = commandArguments.toArray(new String[commandArguments.size()]);
             commandLine.addArguments(args, false);
             getLog().debug("Executing command line: " + commandLine);
@@ -248,7 +246,8 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
         }
     }
 
-    private void handleArguments(List<String> commandArguments) throws MojoExecutionException, MojoFailureException {
+    private List<String> createCommandArguments() throws MojoExecutionException, MojoFailureException {
+        List<String> commandArguments = new ArrayList<>();
         preparePaths(getParent(Paths.get(jlinkExecutable), 2));
         if (modulepathElements != null && !modulepathElements.isEmpty()) {
             commandArguments.add(" --module-path");
@@ -318,6 +317,7 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
             }
             commandArguments.add(" " + launcher + "=" + moduleMainClass);
         }
+        return commandArguments;
     }
 
     private File createZipArchiveFromImage() throws MojoExecutionException {

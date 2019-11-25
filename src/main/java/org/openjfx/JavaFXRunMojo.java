@@ -20,7 +20,6 @@ import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.Executor;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Execute;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -33,8 +32,6 @@ import org.codehaus.plexus.util.StringUtils;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -77,9 +74,7 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
 
             boolean usingOldJDK = isTargetUsingJava8(commandLine);
 
-            List<String> commandArguments = new ArrayList<>();
-            handleArguments(usingOldJDK, commandArguments);
-
+            List<String> commandArguments = createCommandArguments(usingOldJDK);
             String[] args = commandArguments.toArray(new String[commandArguments.size()]);
             commandLine.addArguments(args, false);
             getLog().debug("Executing command line: " + commandLine);
@@ -123,7 +118,8 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
         }
     }
 
-    private void handleArguments(boolean oldJDK, List<String> commandArguments) throws MojoExecutionException {
+    private List<String> createCommandArguments(boolean oldJDK) throws MojoExecutionException {
+        List<String> commandArguments = new ArrayList<>();
         preparePaths(getParent(Paths.get(executable), 2));
 
         if (options != null) {
@@ -180,6 +176,7 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
         if (commandlineArgs != null) {
             commandArguments.add(commandlineArgs);
         }
+        return commandArguments;
     }
 
     // for tests
