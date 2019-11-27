@@ -133,7 +133,10 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
         }
         
         if (commandlineArgs != null) {
-            commandArguments.add(commandlineArgs);
+            String[] split = commandlineArgs.split(" ");
+            for (String string : split) {
+                commandArguments.add(string);
+            }
         }
         
         if (modulepathElements != null && !modulepathElements.isEmpty()) {
