@@ -131,7 +131,11 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
                     .map(String.class::cast)
                     .forEach(commandArguments::add);
         }
-
+        
+        if (commandlineArgs != null) {
+            commandArguments.add(commandlineArgs);
+        }
+        
         if (modulepathElements != null && !modulepathElements.isEmpty()) {
             commandArguments.add(" --module-path");
             String modulePath = StringUtils.join(modulepathElements.iterator(), File.pathSeparator);
@@ -174,9 +178,6 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
             }
         }
 
-        if (commandlineArgs != null) {
-            commandArguments.add(commandlineArgs);
-        }
     }
 
     // for tests
