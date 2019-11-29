@@ -150,14 +150,18 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
             throw new IllegalStateException( "basedir is null. Should not be possible." );
         }
 
+        Map<String, String> enviro = handleSystemEnvVariables();
+        CommandLine commandLine = getExecutablePath(jlinkExecutable, enviro, workingDirectory);
+
+        if (isTargetUsingJava8(commandLine)) {
+            getLog().info("Jlink not supported with Java 1.8");
+            return;
+        }
+
         try {
             handleWorkingDirectory();
 
-            List<String> commandArguments = new ArrayList<>();
-            handleArguments(commandArguments);
-
-            Map<String, String> enviro = handleSystemEnvVariables();
-            CommandLine commandLine = getExecutablePath(jlinkExecutable, enviro, workingDirectory);
+            List<String> commandArguments = createCommandArguments();
             String[] args = commandArguments.toArray(new String[commandArguments.size()]);
             commandLine.addArguments(args, false);
             getLog().debug("Executing command line: " + commandLine);
@@ -240,12 +244,11 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
         } catch (Exception e) {
             throw new MojoExecutionException("Error", e);
         }
-
     }
 
-    private void handleArguments(List<String> commandArguments) throws MojoExecutionException, MojoFailureException {
-        preparePaths();
-
+    private List<String> createCommandArguments() throws MojoExecutionException, MojoFailureException {
+        List<String> commandArguments = new ArrayList<>();
+        preparePaths(getParent(Paths.get(jlinkExecutable), 2));
         if (modulepathElements != null && !modulepathElements.isEmpty()) {
             commandArguments.add(" --module-path");
             String modulePath = StringUtils.join(modulepathElements.iterator(), File.pathSeparator);
@@ -314,6 +317,7 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
             }
             commandArguments.add(" " + launcher + "=" + moduleMainClass);
         }
+        return commandArguments;
     }
 
     private File createZipArchiveFromImage() throws MojoExecutionException {

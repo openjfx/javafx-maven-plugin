@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.openjfx;
 
 import org.apache.commons.exec.CommandLine;
@@ -21,7 +20,6 @@ import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.Executor;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Execute;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -34,6 +32,7 @@ import org.codehaus.plexus.util.StringUtils;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -70,11 +69,12 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
         try {
             handleWorkingDirectory();
 
-            List<String> commandArguments = new ArrayList<>();
-            handleArguments(commandArguments);
-
             Map<String, String> enviro = handleSystemEnvVariables();
             CommandLine commandLine = getExecutablePath(executable, enviro, workingDirectory);
+
+            boolean usingOldJDK = isTargetUsingJava8(commandLine);
+
+            List<String> commandArguments = createCommandArguments(usingOldJDK);
             String[] args = commandArguments.toArray(new String[commandArguments.size()]);
             commandLine.addArguments(args, false);
             getLog().debug("Executing command line: " + commandLine);
@@ -116,13 +116,11 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
         } catch (Exception e) {
             throw new MojoExecutionException("Error", e);
         }
-
     }
 
-
-
-    private void handleArguments(List<String> commandArguments) throws MojoExecutionException, MojoFailureException {
-        preparePaths();
+    private List<String> createCommandArguments(boolean oldJDK) throws MojoExecutionException {
+        List<String> commandArguments = new ArrayList<>();
+        preparePaths(getParent(Paths.get(executable), 2));
 
         if (options != null) {
             options.stream()
@@ -131,30 +129,31 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
                     .map(String.class::cast)
                     .forEach(commandArguments::add);
         }
+        if (!oldJDK) {
+            if (modulepathElements != null && !modulepathElements.isEmpty()) {
+                commandArguments.add(" --module-path");
+                String modulePath = StringUtils.join(modulepathElements.iterator(), File.pathSeparator);
+                commandArguments.add(modulePath);
 
-        if (modulepathElements != null && !modulepathElements.isEmpty()) {
-            commandArguments.add(" --module-path");
-            String modulePath = StringUtils.join(modulepathElements.iterator(), File.pathSeparator);
-            commandArguments.add(modulePath);
-
-            commandArguments.add(" --add-modules");
-            if (moduleDescriptor != null) {
-                commandArguments.add(" " + moduleDescriptor.name());
-            } else {
-                String modules = pathElements.values().stream()
-                        .filter(Objects::nonNull)
-                        .map(JavaModuleDescriptor::name)
-                        .filter(Objects::nonNull)
-                        .filter(module -> module.startsWith(JAVAFX_PREFIX) && !module.endsWith("Empty"))
-                        .collect(Collectors.joining(","));
-                commandArguments.add(" " + modules);
+                commandArguments.add(" --add-modules");
+                if (moduleDescriptor != null) {
+                    commandArguments.add(" " + moduleDescriptor.name());
+                } else {
+                    String modules = pathElements.values().stream()
+                            .filter(Objects::nonNull)
+                            .map(JavaModuleDescriptor::name)
+                            .filter(Objects::nonNull)
+                            .filter(module -> module.startsWith(JAVAFX_PREFIX) && !module.endsWith("Empty"))
+                            .collect(Collectors.joining(","));
+                    commandArguments.add(" " + modules);
+                }
             }
         }
 
-        if (classpathElements != null && !classpathElements.isEmpty()) {
+        if (classpathElements != null && (oldJDK || !classpathElements.isEmpty())) {
             commandArguments.add(" -classpath");
             String classpath = "";
-            if (moduleDescriptor != null) {
+            if (oldJDK || moduleDescriptor != null) {
                 classpath = project.getBuild().getOutputDirectory() + File.pathSeparator;
             }
             classpath += StringUtils.join(classpathElements.iterator(), File.pathSeparator);
@@ -177,6 +176,7 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
         if (commandlineArgs != null) {
             commandArguments.add(commandlineArgs);
         }
+        return commandArguments;
     }
 
     // for tests

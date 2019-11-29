@@ -29,7 +29,6 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
@@ -46,6 +45,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -160,7 +162,16 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
     JavaModuleDescriptor moduleDescriptor;
     private ProcessDestroyer processDestroyer;
 
-    void preparePaths() throws MojoExecutionException, MojoFailureException {
+    static boolean isMavenUsingJava8() {
+        return System.getProperty("java.version").startsWith("1.8");
+    }
+
+    static boolean isTargetUsingJava8(CommandLine commandLine) {
+        final String java = commandLine.getExecutable();
+        return java != null && Files.exists(Paths.get(java).resolve("../../jre/lib/rt.jar").normalize());
+    }
+
+    void preparePaths(Path jdkHome) throws MojoExecutionException {
         if (project == null) {
             return;
         }
@@ -199,11 +210,14 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
             ResolvePathsResult<File> resolvePathsResult;
             if (moduleDescriptorPath != null) {
                 getLog().debug("module descriptor: " + moduleDescriptorPath);
-                fileResolvePathsRequest = fileResolvePathsRequest.setMainModuleDescriptor(moduleDescriptorPath);
+                fileResolvePathsRequest.setMainModuleDescriptor(moduleDescriptorPath);
+            }
+            if (jdkHome != null) {
+                fileResolvePathsRequest.setJdkHome(jdkHome.toFile());
             }
             resolvePathsResult = locationManager.resolvePaths(fileResolvePathsRequest);
 
-            if (!resolvePathsResult.getPathExceptions().isEmpty()) {
+            if (!resolvePathsResult.getPathExceptions().isEmpty() && !isMavenUsingJava8()) {
                 // for each path exception, show a warning to plugin user...
                 for (Map.Entry<File, Exception> pathException : resolvePathsResult.getPathExceptions().entrySet()) {
                     Throwable cause = pathException.getValue();
@@ -242,8 +256,7 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
             }
 
             getLog().debug("pathElements: " + resolvePathsResult.getPathElements().size());
-            resolvePathsResult.getPathElements().entrySet()
-                    .forEach(entry -> pathElements.put(entry.getKey().getPath(), entry.getValue()));
+            resolvePathsResult.getPathElements().forEach((key, value) -> pathElements.put(key.getPath(), value));
             getLog().debug("classpathElements: " + resolvePathsResult.getClasspathElements().size());
             resolvePathsResult.getClasspathElements()
                     .forEach(file -> classpathElements.add(file.getPath()));
@@ -344,9 +357,9 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
         }
 
         if (exec == null) {
-            String javaHome = System.getProperty("java.home", getJavaHome(enviro));
-            if (javaHome != null && ! javaHome.isEmpty()) {
-                exec = findExecutable(executable, Arrays.asList(javaHome.concat(File.separator).concat("bin")));
+            String javaHomeFromEnv = getJavaHomeEnv(enviro);
+            if (javaHomeFromEnv != null && ! javaHomeFromEnv.isEmpty()) {
+                exec = findExecutable(executable, Arrays.asList(javaHomeFromEnv.concat(File.separator).concat("bin")));
             }
         }
 
@@ -372,6 +385,34 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
         }
         getLog().debug("Executable " + toRet.toString());
         return toRet;
+    }
+
+    int executeCommandLine(Executor exec, CommandLine commandLine, Map<String, String> enviro,
+                           OutputStream out, OutputStream err) throws ExecuteException, IOException {
+        // note: don't use BufferedOutputStream here since it delays the outputs MEXEC-138
+        PumpStreamHandler psh = new PumpStreamHandler(out, err, System.in);
+        return executeCommandLine(exec, commandLine, enviro, psh);
+    }
+
+    int executeCommandLine(Executor exec, CommandLine commandLine, Map<String, String> enviro,
+                           FileOutputStream outputFile) throws ExecuteException, IOException {
+        BufferedOutputStream bos = new BufferedOutputStream(outputFile);
+        PumpStreamHandler psh = new PumpStreamHandler(bos);
+        return executeCommandLine(exec, commandLine, enviro, psh);
+    }
+
+    /**
+     * Returns the path of the parent directory.
+     * At the given depth if the path has no parent, the method returns null.
+     * @param path Path against which the parent needs to be evaluated
+     * @param depth Depth of the path relative to parent
+     * @return Path to the parent, if exists. Null, otherwise.
+     */
+    static Path getParent(Path path, int depth) {
+        if (path == null || !Files.exists(path) || depth > path.getNameCount()) {
+            return null;
+        }
+        return path.getRoot().resolve(path.subpath(0, path.getNameCount() - depth));
     }
 
     private static String findExecutable(final String executable, final List<String> paths) {
@@ -428,22 +469,8 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
         return paths;
     }
 
-    private String getJavaHome(Map<String, String> enviro) {
+    private String getJavaHomeEnv(Map<String, String> enviro) {
         return enviro.get("JAVA_HOME");
-    }
-
-    int executeCommandLine(Executor exec, CommandLine commandLine, Map<String, String> enviro,
-                                     OutputStream out, OutputStream err) throws ExecuteException, IOException {
-        // note: don't use BufferedOutputStream here since it delays the outputs MEXEC-138
-        PumpStreamHandler psh = new PumpStreamHandler(out, err, System.in);
-        return executeCommandLine(exec, commandLine, enviro, psh);
-    }
-
-    int executeCommandLine(Executor exec, CommandLine commandLine, Map<String, String> enviro,
-                                   FileOutputStream outputFile) throws ExecuteException, IOException {
-        BufferedOutputStream bos = new BufferedOutputStream(outputFile);
-        PumpStreamHandler psh = new PumpStreamHandler(bos);
-        return executeCommandLine(exec, commandLine, enviro, psh);
     }
 
     private int executeCommandLine(Executor exec, final CommandLine commandLine, Map<String, String> enviro,
