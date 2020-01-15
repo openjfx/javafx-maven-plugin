@@ -39,7 +39,7 @@ Add the plugin:
 <plugin>
     <groupId>org.openjfx</groupId>
     <artifactId>javafx-maven-plugin</artifactId>
-    <version>0.0.3</version>
+    <version>0.0.4</version>
     <configuration>
         <mainClass>hellofx/org.openjfx.App</mainClass>
     </configuration>
@@ -87,7 +87,7 @@ This configuration changes these levels to 12, for instance:
 <plugin>
     <groupId>org.openjfx</groupId>
     <artifactId>javafx-maven-plugin</artifactId>
-    <version>0.0.3</version>
+    <version>0.0.4</version>
     <configuration>
         <source>12</source>
         <target>12</target>
@@ -103,7 +103,7 @@ If required, compiler arguments can be set. For instance:
 <plugin>
     <groupId>org.openjfx</groupId>
     <artifactId>javafx-maven-plugin</artifactId>
-    <version>0.0.3</version>
+    <version>0.0.4</version>
     <configuration>
         <compilerArgs>
             <arg>--add-exports</arg>
@@ -136,7 +136,7 @@ For instance, the following configuration adds some VM options and a command lin
 <plugin>
     <groupId>org.openjfx</groupId>
     <artifactId>javafx-maven-plugin</artifactId>
-    <version>0.0.3</version>
+    <version>0.0.4</version>
     <configuration>
         <mainClass>org.openjfx.hellofx/org.openjfx.App</mainClass>
         <options>
@@ -197,7 +197,7 @@ For instance, with the following configuration:
 <plugin>
     <groupId>org.openjfx</groupId>
     <artifactId>javafx-maven-plugin</artifactId>
-    <version>0.0.3</version>
+    <version>0.0.4</version>
     <configuration>
         <stripDebug>true</stripDebug>
         <compress>2</compress>
