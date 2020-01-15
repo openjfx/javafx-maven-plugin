@@ -16,5 +16,5 @@ for f in ./javafx-archetype-* ; do
   fi
 done
 
-git -c user.name="Gluon Bot" -c user.email="githubbot@gluonhq.com" commit */$XML_LOCATION -m "Upgrade javafx-maven-plugin version to $1"
+git commit */$XML_LOCATION -m "Upgrade javafx-maven-plugin version to $1"
 git push https://gluon-bot:$GITHUB_PASSWORD@github.com/$ARCHETYPE_REPO_SLUG HEAD:master
