@@ -20,7 +20,7 @@ newVersion=${TRAVIS_TAG%.*}.$((${TRAVIS_TAG##*.} + 1))
 # Update project version to next snapshot version
 mvn versions:set -DnewVersion=$newVersion-SNAPSHOT -DgenerateBackupPoms=false
 
-git commit pom.xml -m "Prepare development of $newVersion" --author "Gluon Bot <githubbot@gluonhq.com>"
+git -c user.name="Gluon Bot" -c user.email="githubbot@gluonhq.com" commit pom.xml -m "Prepare development of $newVersion"
 git push https://gluon-bot:$GITHUB_PASSWORD@github.com/$TRAVIS_REPO_SLUG HEAD:master
 
 # Update archetypes
