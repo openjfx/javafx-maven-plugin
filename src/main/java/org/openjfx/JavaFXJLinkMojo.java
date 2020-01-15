@@ -56,6 +56,13 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
     private boolean stripDebug;
 
     /**
+     * Strip Java debug attributes out, equivalent to <code>--strip-java-debug-attributes</code>,
+     * default false
+     */
+    @Parameter(property = "javafx.stripJavaDebugAttributes", defaultValue = "false")
+    private boolean stripJavaDebugAttributes;
+
+    /**
      * Compression level of the resources being used, equivalent to:
      * <code>-c, --compress=level</code>. Valid values: <code>0, 1, 2</code>,
      * default 2
@@ -283,6 +290,9 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
 
         if (stripDebug) {
             commandArguments.add(" --strip-debug");
+        }
+        if (stripJavaDebugAttributes) {
+            commandArguments.add(" --strip-java-debug-attributes");
         }
         if (bindServices) {
             commandArguments.add(" --bind-services");
