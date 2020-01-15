@@ -13,6 +13,12 @@ dist: xenial
 services:
   - xvfb
 
+# Install xmlstarlet
+addons:
+  apt:
+    packages:
+      - xmlstarlet
+
 # Do not run travis install step
 install: true
 
