@@ -40,3 +40,6 @@ git push https://gluon-bot:$GITHUB_PASSWORD@github.com/$TRAVIS_REPO_SLUG HEAD:ma
 
 # Update archetypes
 bash .ci/update-archetypes.sh "$TRAVIS_TAG"
+
+# Update openjfx-docs
+bash .ci/update-openjfx-docs.sh "$TRAVIS_TAG"
