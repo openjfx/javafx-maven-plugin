@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 
-export ARCHETYPE_REPO_SLUG=openjfx/javafx-maven-archetypes
+export REPO_NAME=javafx-maven-archetypes
+export REPO_SLUG=openjfx/javafx-maven-archetypes
 export XML_LOCATION=src/main/resources/META-INF/maven/archetype-metadata.xml
 
 cd $TRAVIS_BUILD_DIR
-git clone https://github.com/$ARCHETYPE_REPO_SLUG
-cd javafx-maven-archetypes
+git clone https://github.com/$REPO_SLUG
+cd $REPO_NAME
 
 # Traverse through all sub-directories starting with "javafx-archetype-"
 for f in ./javafx-archetype-* ; do
@@ -17,4 +18,4 @@ for f in ./javafx-archetype-* ; do
 done
 
 git commit */$XML_LOCATION -m "Upgrade javafx-maven-plugin version to $1"
-git push https://gluon-bot:$GITHUB_PASSWORD@github.com/$ARCHETYPE_REPO_SLUG HEAD:master
+git push https://gluon-bot:$GITHUB_PASSWORD@github.com/$REPO_SLUG HEAD:master
