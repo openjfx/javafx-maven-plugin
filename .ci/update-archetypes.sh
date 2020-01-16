@@ -3,7 +3,7 @@
 export ARCHETYPE_REPO_SLUG=openjfx/javafx-maven-archetypes
 export XML_LOCATION=src/main/resources/META-INF/maven/archetype-metadata.xml
 
-# cd $TRAVIS_BUILD_DIR
+cd $TRAVIS_BUILD_DIR
 git clone https://github.com/$ARCHETYPE_REPO_SLUG
 cd javafx-maven-archetypes
 
