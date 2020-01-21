@@ -46,12 +46,6 @@ Add the plugin:
 </plugin>
 ```
 
-To compile the project (optional):
-
-```
-mvn javafx:compile
-```
-
 Alternatively, the `maven-compiler-plugin` can be used:
 
 ```
