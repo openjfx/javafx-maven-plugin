@@ -55,6 +55,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -155,6 +156,15 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
      */
     @Parameter(property = "javafx.includePathExceptionsInClasspath", defaultValue = "false")
     private boolean includePathExceptionsInClasspath;
+
+    /**
+     * Path to a local JavaFX SDK.
+     *
+     * When set to a valid path, the JavaFX jars found in this path
+     * will be used instead of the Maven Central ones
+     */
+    @Parameter(property = "javafx.sdk")
+    private String sdk;
 
     List<String> classpathElements;
     List<String> modulepathElements;
@@ -314,11 +324,30 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
                     }
                     return compare;
                 })
-                .map(Artifact::getFile)
+                .map(this::getFileForArtifact)
+                .filter(Objects::nonNull)
+                .distinct()
                 .collect(Collectors.toList()));
         return list.stream()
                 .distinct()
                 .collect(Collectors.toList());
+    }
+
+    private File getFileForArtifact(Artifact a) {
+        if (a == null || a.getArtifactId() == null) {
+            return null;
+        }
+        if (sdk == null) {
+            return a.getFile();
+        }
+        Path jarPath = Paths.get(sdk, "lib",
+                a.getArtifactId().replace("-", ".") + ".jar");
+        if (!Files.exists(jarPath)) {
+            getLog().warn("Path for jar " + a.getArtifactId() + " not found at " + jarPath + ".\n" +
+                    "Using default Maven Central artifact instead.");
+            return a.getFile();
+        }
+        return jarPath.toFile();
     }
 
     void handleWorkingDirectory() throws MojoExecutionException {
