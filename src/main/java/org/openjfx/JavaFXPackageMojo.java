@@ -90,21 +90,6 @@ public class JavaFXPackageMojo extends JavaFXBaseMojo {
             CommandLine commandLine = getExecutablePath(executable, enviro, workingDirectory);
 
             boolean usingOldJDK = isTargetUsingJava8(commandLine);
-            /*
-            if (usingOldJDK) {
-                throw new MojoExecutionException("'package' goal intended for Java 9 and greater");
-            }
-             */
-
-            /*
-            List<String> commandArguments = createCommandArguments(usingOldJDK);
-            String[] args = commandArguments.toArray(new String[commandArguments.size()]);
-            commandLine.addArguments(args, false);
-            getLog().debug("Executing command line: " + commandLine);
-
-            Executor exec = new DefaultExecutor();
-            exec.setWorkingDirectory(workingDirectory);
-             */
 
             final File outputDirectory = output.toFile();
             if (outputDirectory.exists()) {
