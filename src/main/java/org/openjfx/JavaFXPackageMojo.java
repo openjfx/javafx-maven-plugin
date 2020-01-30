@@ -90,7 +90,8 @@ public class JavaFXPackageMojo extends JavaFXBaseMojo {
         output = basedir.toPath()
                 .resolve(project.getBuild().getOutputDirectory())
                 .resolve("..")
-                .resolve(packageDirectory);
+                .resolve(packageDirectory)
+                .normalize();
 
         try {
             handleWorkingDirectory();
@@ -148,7 +149,7 @@ public class JavaFXPackageMojo extends JavaFXBaseMojo {
             throws IOException, MojoExecutionException {
         final String modulePrefix = jarDirectory + File.separatorChar;
         final Path destinationDirPath = output.resolve(jarDirectory);
-        if (Files.isDirectory(destinationDirPath) && !Files.exists(destinationDirPath)) {
+        if (!Files.isDirectory(destinationDirPath) || !Files.exists(destinationDirPath)) {
             if (!destinationDirPath.toFile().mkdirs()) {
                 throw new MojoExecutionException("Can't create directory " + destinationDirPath);
             }
