@@ -16,9 +16,6 @@
 package org.openjfx;
 
 import org.apache.commons.exec.CommandLine;
-import org.apache.commons.exec.DefaultExecutor;
-import org.apache.commons.exec.ExecuteException;
-import org.apache.commons.exec.Executor;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Execute;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -26,24 +23,20 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.codehaus.plexus.languages.java.jpms.JavaModuleDescriptor;
-import org.codehaus.plexus.util.IOUtil;
-import org.codehaus.plexus.util.StringUtils;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.CopyOption;
 import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermission;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -65,14 +58,27 @@ public class JavaFXPackageMojo extends JavaFXBaseMojo {
      */
     @Parameter(property = "packageDirectory", defaultValue = "package")
     private String packageDirectory;
+    /**
+     * <p>
+     * If true, the generated script will use absolute paths. By default, it uses
+     * relative paths
+     * </p>
+     */
+    @SuppressWarnings("unused")
     @Parameter(property = "absolute", defaultValue = "false")
     private boolean absolute;
 
+    /**
+     * <p>
+     * Name of subdirectory jars are copied into.
+     * </p>
+     */
+    @Parameter(property = "jarDirectory", defaultValue = "jars")
+    private String jarDirectory;
 
     private Path output;
 
     public void execute() throws MojoExecutionException {
-        System.out.println("Absolute is " + absolute);
         if (skip) {
             getLog().info("skipping execute as per configuration");
             return;
@@ -81,7 +87,10 @@ public class JavaFXPackageMojo extends JavaFXBaseMojo {
         if (basedir == null) {
             throw new IllegalStateException("basedir is null. Should not be possible.");
         }
-        output = basedir.toPath().resolve(packageDirectory);
+        output = basedir.toPath()
+                .resolve(project.getBuild().getOutputDirectory())
+                .resolve("..")
+                .resolve(packageDirectory);
 
         try {
             handleWorkingDirectory();
@@ -135,10 +144,10 @@ public class JavaFXPackageMojo extends JavaFXBaseMojo {
         }
     }
 
-    private void copy(List<String> source, String destinationDirectory, StringBuilder script)
+    private void copy(List<String> source, StringBuilder script)
             throws IOException, MojoExecutionException {
-        final String modulePrefix = destinationDirectory + File.separatorChar;
-        final Path destinationDirPath = output.resolve(destinationDirectory);
+        final String modulePrefix = jarDirectory + File.separatorChar;
+        final Path destinationDirPath = output.resolve(jarDirectory);
         if (Files.isDirectory(destinationDirPath) && !Files.exists(destinationDirPath)) {
             if (!destinationDirPath.toFile().mkdirs()) {
                 throw new MojoExecutionException("Can't create directory " + destinationDirPath);
@@ -170,30 +179,24 @@ public class JavaFXPackageMojo extends JavaFXBaseMojo {
         }
     }
 
-    static final String MODULES = "modules";
-
-    //private List<String> createCommandArguments(boolean oldJDK) throws MojoExecutionException {
     private void createPackage(boolean oldJDK) throws MojoExecutionException {
         try {
-            List<String> commandArguments = new ArrayList<>();
             preparePaths(getParent(Paths.get(executable), 2));
 
+            StringBuilder script = new StringBuilder("#!/bin/bash");
             if (options != null) {
                 options.stream()
                         .filter(Objects::nonNull)
                         .filter(String.class::isInstance)
                         .map(String.class::cast)
-                        .forEach(commandArguments::add);
+                        .forEach(script::append);
             }
-            StringBuilder script = new StringBuilder("#!/bin/bash");
             script.append(System.lineSeparator());
             script.append("java ");
             if (!oldJDK) {
-                final String modulePrefix = MODULES + File.separatorChar;
-                final Path modulePath = output.resolve(MODULES);
                 if (modulepathElements != null && !modulepathElements.isEmpty()) {
                     script.append("--module-path ");
-                    copy(modulepathElements, MODULES, script);
+                    copy(modulepathElements, script);
 
                     script.append(" --add-modules ");
                     if (moduleDescriptor != null) {
@@ -212,38 +215,26 @@ public class JavaFXPackageMojo extends JavaFXBaseMojo {
 
             if (classpathElements != null && (oldJDK || !classpathElements.isEmpty())) {
                 script.append(" -classpath ");
-                String classpath = "";
-                if (oldJDK || moduleDescriptor != null) {
-                    classpath = project.getBuild().getOutputDirectory() + File.pathSeparator;
-                }
-                copy(classpathElements, MODULES, script);
-                classpath += StringUtils.join(classpathElements.iterator(), File.pathSeparator);
-                commandArguments.add(classpath);
+                copy(classpathElements, script);
             }
 
             if (mainClass != null) {
                 if (moduleDescriptor != null) {
-                    commandArguments.add(" --module");
                     script.append(" --module");
                     if (!mainClass.startsWith(moduleDescriptor.name() + "/")) {
-                        commandArguments.add(" " + moduleDescriptor.name() + "/" + mainClass);
                         script.append(" " + moduleDescriptor.name() + "/" + mainClass);
                     } else {
-                        commandArguments.add(" " + mainClass);
                         script.append(" " + mainClass);
                     }
                 } else {
-                    commandArguments.add(" " + mainClass);
                     script.append(" " + mainClass);
                 }
             }
 
             if (commandlineArgs != null) {
-                commandArguments.add(commandlineArgs);
                 script.append(commandlineArgs);
             }
 
-            System.out.println("Script " + script.toString());
             final Path scriptPath = output.resolve("script.sh");
             Files.write(scriptPath, script.toString().getBytes());
             final Set<PosixFilePermission> perm = Files.getPosixFilePermissions(scriptPath);
