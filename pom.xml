@@ -17,29 +17,29 @@
  ~ NMRbox.org extension funded by the National Institutes of Health (NIH) /
  ~ National Institute of General Medical Sciences (NIGMS), grant 1P41GM111135 
  -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>edu.uchc.connjur</groupId>
   <artifactId>connjurpackage-maven-plugin</artifactId>
   <packaging>maven-plugin</packaging>
   <version>1.0.0</version>
   <name>connjurpackage-maven-plugin Maven Mojo</name>
-  <description>Plugin used to package JavaFX 11+ projects</description>
+  <description>Plugin used to package JavaFX 11+
+  projects</description>
   <inceptionYear>2020</inceptionYear>
-
   <url>https://www.nmrbox.org</url>
-
   <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.build.sourceEncoding>
+    UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>8</maven.compiler.source>
     <maven.compiler.target>8</maven.compiler.target>
     <javafx.version>12.0.1</javafx.version>
     <javadoc.plugin.version>3.1.0</javadoc.plugin.version>
     <gpg.plugin.version>1.6</gpg.plugin.version>
   </properties>
-
   <dependencies>
     <dependency>
       <groupId>org.apache.maven</groupId>
@@ -67,7 +67,6 @@
       <artifactId>commons-exec</artifactId>
       <version>1.3</version>
     </dependency>
-
     <!--test-->
     <dependency>
       <groupId>org.openjfx</groupId>
@@ -98,24 +97,24 @@
       <version>3.3.9</version>
       <scope>test</scope>
     </dependency>
-      <dependency>
-          <groupId>org.eclipse.aether</groupId>
-          <artifactId>aether-transport-http</artifactId>
-          <version>1.1.0</version>
-          <scope>test</scope>
-      </dependency>
-      <dependency>
-          <groupId>org.eclipse.aether</groupId>
-          <artifactId>aether-transport-file</artifactId>
-          <version>1.1.0</version>
-          <scope>test</scope>
-      </dependency>
-      <dependency>
-          <groupId>org.eclipse.aether</groupId>
-          <artifactId>aether-connector-basic</artifactId>
-          <version>1.1.0</version>
-          <scope>test</scope>
-      </dependency>
+    <dependency>
+      <groupId>org.eclipse.aether</groupId>
+      <artifactId>aether-transport-http</artifactId>
+      <version>1.1.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.aether</groupId>
+      <artifactId>aether-transport-file</artifactId>
+      <version>1.1.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.aether</groupId>
+      <artifactId>aether-connector-basic</artifactId>
+      <version>1.1.0</version>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>org.codehaus.plexus</groupId>
       <artifactId>plexus-interpolation</artifactId>
@@ -135,7 +134,6 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-
   <build>
     <plugins>
       <plugin>
@@ -165,7 +163,6 @@
       </plugin>
     </plugins>
   </build>
-
   <profiles>
     <profile>
       <id>release</id>
@@ -224,21 +221,32 @@
               </execution>
             </executions>
           </plugin>
+          <plugin>
+            <artifactId>maven-deploy-plugin</artifactId>
+            <version>3.0.0</version>
+            <executions>
+              <execution>
+                <id>default-deploy</id>
+                <phase>deploy</phase>
+                <goals>
+                  <goal>deploy</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
         </plugins>
       </build>
     </profile>
   </profiles>
-
   <organization>
-    <name>Gluon</name>
-    <url>https://www.gluonhq.com</url>
+    <name>NMRbox.org</name>
+    <url>https://www.nmrbox.org</url>
   </organization>
-
   <issueManagement>
     <system>GitHub</system>
-    <url>https://github.com/openjfx/javafx-maven-plugin/issues</url>
+    <url>
+    https://github.com/CONNJUR/connjurpackage-maven-plugin/issues</url>
   </issueManagement>
-
   <licenses>
     <license>
       <name>The Apache Software License, Version 2.0</name>
@@ -246,36 +254,38 @@
       <distribution>repo</distribution>
     </license>
   </licenses>
-
   <developers>
     <developer>
-      <name>Abhinay Agarwal</name>
-      <email>abhinay.agarwal@gluonhq.com</email>
-      <organization>Gluon</organization>
+      <name>Gerard Weatherby</name>
+      <email>gweatherby@uchc.edu</email>
+      <organization></organization>
       <organizationUrl>https://www.gluonhq.com</organizationUrl>
     </developer>
     <developer>
       <name>José Pereda</name>
       <email>jose.pereda@gluonhq.com</email>
-      <organization>Gluon</organization>
-      <organizationUrl>https://www.gluonhq.com</organizationUrl>
+      <organization>NMRbox</organization>
+      <organizationUrl>https://www.nmrbox.org</organizationUrl>
     </developer>
   </developers>
-
   <scm>
-    <url>https://github.com/openjfx/javafx-maven-plugin</url>
-    <connection>scm:git:git://github.com/openjfx/javafx-maven-plugin.git</connection>
-    <developerConnection>scm:git:ssh://git@github.com:openjfx/javafx-maven-plugin.git</developerConnection>
+    <url>
+    https://github.com/CONNJUR/connjurpackage-maven-plugin</url>
+    <connection>
+    scm:git:git://github.com/CONNJUR/connjurpackage-maven-plugin.git</connection>
+    <developerConnection>
+    cm:git:git://github.com/CONNJUR/connjurpackage-maven-plugin.git</developerConnection>
   </scm>
-
   <distributionManagement>
     <snapshotRepository>
       <id>ossrh</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+      <url>
+      https://oss.sonatype.org/content/repositories/snapshots</url>
     </snapshotRepository>
     <repository>
       <id>ossrh</id>
-      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+      <url>
+      https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
     </repository>
   </distributionManagement>
 </project>
