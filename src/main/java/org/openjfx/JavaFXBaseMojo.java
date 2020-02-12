@@ -59,11 +59,12 @@ import java.util.Properties;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-abstract class JavaFXBaseMojo extends AbstractMojo {
+public abstract class JavaFXBaseMojo extends AbstractMojo {
 
-    static final String JAVAFX_PREFIX = "javafx";
+    protected static final String JAVAFX_PREFIX = "javafx";
 
     @Parameter(defaultValue = "${project}", readonly = true)
+    protected
     MavenProject project;
 
     @Parameter(defaultValue = "${session}", readonly = true)
@@ -76,15 +77,18 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
     private LocationManager locationManager;
 
     @Parameter(property = "javafx.mainClass", required = true)
+    protected
     String mainClass;
 
     /**
      * Skip the execution.
      */
     @Parameter(property = "javafx.skip", defaultValue = "false")
+    protected
     boolean skip;
 
     @Parameter(readonly = true, required = true, defaultValue = "${basedir}")
+    protected
     File basedir;
 
     @Parameter(readonly = true, required = true, defaultValue = "${project.build.directory}")
@@ -94,6 +98,7 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
      * The current working directory. Optional. If not specified, basedir will be used.
      */
     @Parameter(property = "javafx.workingDirectory")
+    protected
     File workingDirectory;
 
     @Parameter(defaultValue = "${project.compileClasspathElements}", readonly = true, required = true)
@@ -123,12 +128,14 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
      *
      */
     @Parameter
+    protected
     List<?> options;
 
     /**
      * Arguments separated by space for the executed program. For example: "-j 20"
      */
     @Parameter(property = "javafx.args")
+    protected
     String commandlineArgs;
 
     /**
@@ -156,22 +163,22 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
     @Parameter(property = "javafx.includePathExceptionsInClasspath", defaultValue = "false")
     private boolean includePathExceptionsInClasspath;
 
-    List<String> classpathElements;
-    List<String> modulepathElements;
-    Map<String, JavaModuleDescriptor> pathElements;
-    JavaModuleDescriptor moduleDescriptor;
+    protected List<String> classpathElements;
+    protected List<String> modulepathElements;
+    protected Map<String, JavaModuleDescriptor> pathElements;
+    protected JavaModuleDescriptor moduleDescriptor;
     private ProcessDestroyer processDestroyer;
 
     static boolean isMavenUsingJava8() {
         return System.getProperty("java.version").startsWith("1.8");
     }
 
-    static boolean isTargetUsingJava8(CommandLine commandLine) {
+    protected static boolean isTargetUsingJava8(CommandLine commandLine) {
         final String java = commandLine.getExecutable();
         return java != null && Files.exists(Paths.get(java).resolve("../../jre/lib/rt.jar").normalize());
     }
 
-    void preparePaths(Path jdkHome) throws MojoExecutionException {
+    protected void preparePaths(Path jdkHome) throws MojoExecutionException {
         if (project == null) {
             return;
         }
@@ -321,7 +328,7 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
                 .collect(Collectors.toList());
     }
 
-    void handleWorkingDirectory() throws MojoExecutionException {
+    protected void handleWorkingDirectory() throws MojoExecutionException {
         if (workingDirectory == null) {
             workingDirectory = basedir;
         }
@@ -334,7 +341,7 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
         }
     }
 
-    Map<String, String> handleSystemEnvVariables() {
+    protected Map<String, String> handleSystemEnvVariables() {
         Map<String, String> enviro = new HashMap<>();
         try {
             Properties systemEnvVars = CommandLineUtils.getSystemEnvVars();
@@ -348,7 +355,7 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
         return enviro;
     }
 
-    CommandLine getExecutablePath(String executable, Map<String, String> enviro, File dir) {
+    protected CommandLine getExecutablePath(String executable, Map<String, String> enviro, File dir) {
         File execFile = new File(executable);
         String exec = null;
         if (execFile.isFile()) {
@@ -408,7 +415,7 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
      * @param depth Depth of the path relative to parent
      * @return Path to the parent, if exists. Null, otherwise.
      */
-    static Path getParent(Path path, int depth) {
+    protected static Path getParent(Path path, int depth) {
         if (path == null || !Files.exists(path) || depth > path.getNameCount()) {
             return null;
         }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.openjfx;
+package edu.uchc.connjur.maven;
 
 import org.apache.commons.exec.CommandLine;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -23,6 +23,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.codehaus.plexus.languages.java.jpms.JavaModuleDescriptor;
+import org.openjfx.JavaFXBaseMojo;
 
 import java.io.File;
 import java.io.IOException;
@@ -42,7 +43,7 @@ import java.util.stream.Collectors;
 
 @Mojo(name = "package", requiresDependencyResolution = ResolutionScope.RUNTIME)
 @Execute(phase = LifecyclePhase.PROCESS_CLASSES)
-public class JavaFXPackageMojo extends JavaFXBaseMojo {
+public class ConnjurPackageMojo extends JavaFXBaseMojo {
     /**
      * <p>
      * The executable. Can be a full path or the name of the executable. In the latter case, the executable must be in
