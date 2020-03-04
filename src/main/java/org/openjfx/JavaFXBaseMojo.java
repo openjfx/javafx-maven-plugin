@@ -177,7 +177,14 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
         }
 
         String outputDirectory = project.getBuild().getOutputDirectory();
+        if (outputDirectory == null || outputDirectory.isEmpty()) {
+            throw new MojoExecutionException("Error: Output directory doesn't exist");
+        }
+
         File[] classes = new File(outputDirectory).listFiles();
+        if (classes == null || classes.length == 0) {
+            throw new MojoExecutionException("Error: Output directory is empty");
+        }
 
         File moduleDescriptorPath = Stream
                 .of(classes)
