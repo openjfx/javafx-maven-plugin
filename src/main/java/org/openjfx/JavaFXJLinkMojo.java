@@ -32,6 +32,7 @@ import org.codehaus.plexus.archiver.zip.ZipArchiver;
 import org.codehaus.plexus.util.IOUtil;
 import org.codehaus.plexus.util.StringUtils;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -163,6 +164,12 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
         if (isTargetUsingJava8(commandLine)) {
             getLog().info("Jlink not supported with Java 1.8");
             return;
+        }
+
+        if (stripJavaDebugAttributes && !isJLinkVersion13orHigher(commandLine.getExecutable())) {
+            stripJavaDebugAttributes = false;
+            getLog().warn("JLink parameter --strip-java-debug-attributes only supported for version 13 and higher");
+            getLog().warn("The option 'stripJavaDebugAttributes' was skipped");
         }
 
         try {
@@ -342,6 +349,31 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
             throw new MojoExecutionException(e.getMessage(), e);
         }
         return resultArchive;
+    }
+
+    private boolean isJLinkVersion13orHigher(String jlinkExePath) {
+        CommandLine versionCommandLine = new CommandLine(jlinkExePath)
+                .addArgument("--version");
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        int resultCode = -1;
+
+        try {
+            resultCode = executeCommandLine(new DefaultExecutor(), versionCommandLine, null, baos, System.err);
+        } catch (IOException e) {
+            if (getLog().isDebugEnabled()) {
+                getLog().error("Error getting JLink version", e);
+            }
+        }
+
+        if (resultCode != 0) {
+            getLog().error("Unable to get JLink version");
+            getLog().error("Result of " + versionCommandLine + " execution is: '" + resultCode + "'");
+            return false;
+        }
+
+        String versionStr = new String(baos.toByteArray());
+        return versionStr.matches("1[3-9][.\\s]*");
     }
 
     // for tests
