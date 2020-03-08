@@ -44,10 +44,13 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Mojo(name = "jlink", requiresDependencyResolution = ResolutionScope.RUNTIME)
 public class JavaFXJLinkMojo extends JavaFXBaseMojo {
+
+    private static final Pattern JLINK_VERSION_PATTERN = Pattern.compile("(1[3-9]|[2-9][0-9]|\\d{3,})");
 
     /**
      * Strips debug information out, equivalent to <code>-G, --strip-debug</code>,
@@ -373,7 +376,7 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
         }
 
         String versionStr = new String(baos.toByteArray());
-        return versionStr.matches("1[3-9][.\\s]*");
+        return JLINK_VERSION_PATTERN.matcher(versionStr).lookingAt();
     }
 
     // for tests
