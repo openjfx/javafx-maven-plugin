@@ -23,6 +23,8 @@ import org.apache.commons.exec.Executor;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
+import org.apache.maven.plugins.annotations.Execute;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
@@ -46,6 +48,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Mojo(name = "jlink", requiresDependencyResolution = ResolutionScope.RUNTIME)
+@Execute(phase = LifecyclePhase.PROCESS_CLASSES)
 public class JavaFXJLinkMojo extends JavaFXBaseMojo {
 
     /**
