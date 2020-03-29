@@ -52,6 +52,12 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
     @Parameter(property = "javafx.executable", defaultValue = "java")
     private String executable;
 
+    /**
+     * Allows to run the application by adding the javafx JAR files to the classpath instead of modulepath.
+     */
+    @Parameter(property = "javafx.runWithClasspath", defaultValue = "false")
+    private boolean runWithClasspath;
+
     public void execute() throws MojoExecutionException {
         if (skip) {
             getLog().info( "skipping execute as per configuration" );
@@ -129,7 +135,7 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
                     .map(String.class::cast)
                     .forEach(commandArguments::add);
         }
-        if (!oldJDK) {
+        if (!oldJDK && !runWithClasspath) {
             if (modulepathElements != null && !modulepathElements.isEmpty()) {
                 commandArguments.add(" --module-path");
                 String modulePath = StringUtils.join(modulepathElements.iterator(), File.pathSeparator);
@@ -153,8 +159,12 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
         if (classpathElements != null && (oldJDK || !classpathElements.isEmpty())) {
             commandArguments.add(" -classpath");
             String classpath = "";
-            if (oldJDK || moduleDescriptor != null) {
+            if (oldJDK || moduleDescriptor != null || runWithClasspath) {
                 classpath = project.getBuild().getOutputDirectory() + File.pathSeparator;
+
+                if (runWithClasspath && modulepathElements != null && !modulepathElements.isEmpty()) {
+                    classpath += StringUtils.join(modulepathElements.iterator(), File.pathSeparator) + File.pathSeparator;
+                }
             }
             classpath += StringUtils.join(classpathElements.iterator(), File.pathSeparator);
             commandArguments.add(classpath);

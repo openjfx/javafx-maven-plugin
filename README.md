@@ -129,6 +129,8 @@ Optionally, the configuration can be modified with:
 - `includePathExceptionsInClasspath`: When resolving the module-path, setting this value to true will include the 
 dependencies that generate path exceptions in the classpath. By default the value is false, and these dependencies 
 won't be included.
+- `runWithClasspath`: Allows to run the application by adding the javafx JAR files to the classpath instead of
+modulepath. Values: false (default), true
 
 For instance, the following configuration adds some VM options and a command line argument:
 
