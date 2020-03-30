@@ -464,7 +464,15 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
     }
 
     private String getJavaHomeEnv(Map<String, String> enviro) {
-        return enviro.get("JAVA_HOME");
+        String javahome = enviro.get("JAVA_HOME");
+        if (javahome == null || javahome.isEmpty()) {
+            return null;
+        }
+
+        int pathStartIndex = javahome.charAt(0) == '"' ? 1 : 0;
+        int pathEndIndex = javahome.charAt(javahome.length() - 1) == '"' ? javahome.length() - 1 : javahome.length();
+
+        return javahome.substring(pathStartIndex, pathEndIndex);
     }
 
     private int executeCommandLine(Executor exec, final CommandLine commandLine, Map<String, String> enviro,
