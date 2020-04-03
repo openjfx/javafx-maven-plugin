@@ -34,6 +34,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -127,6 +128,9 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
                     .filter(Objects::nonNull)
                     .filter(String.class::isInstance)
                     .map(String.class::cast)
+                    .map(s -> s.split(" "))
+                    .map(List::of)
+                    .flatMap(Collection::stream)
                     .forEach(commandArguments::add);
         }
         if (!oldJDK) {
