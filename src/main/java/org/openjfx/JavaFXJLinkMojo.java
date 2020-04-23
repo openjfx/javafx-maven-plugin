@@ -242,8 +242,12 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
             // Add vm options to launcher script
             List<String> lines = Files.lines(launcherPath)
                     .map(line -> {
-                        if ("JLINK_VM_OPTIONS=".equals(line) || "set JLINK_VM_OPTIONS=".equals(line)) {
-                            return line + "\"" + optionsString + "\"";
+                        boolean unixOptionsLine = "JLINK_VM_OPTIONS=".equals(line);
+                        boolean winOptionsLine = "set JLINK_VM_OPTIONS=".equals(line);
+
+                        if (unixOptionsLine || winOptionsLine) {
+                            String lineWrapper = unixOptionsLine ? "\"" : "";
+                            return line + lineWrapper + optionsString + lineWrapper;
                         }
                         return line;
                     })
