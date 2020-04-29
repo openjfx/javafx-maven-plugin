@@ -46,72 +46,26 @@ Add the plugin:
 </plugin>
 ```
 
-To compile the project (optional):
-
-```
-mvn javafx:compile
-```
-
-Alternatively, the `maven-compiler-plugin` can be used:
+Compile the project:
 
 ```
 mvn compile
 ```
 
-Note that including this plugin is convenient for a better 
-project integration within your IDE.
+This step is optional and can be configured using the [maven-compiler-plugin](https://maven.apache.org/plugins/maven-compiler-plugin/).
 
-To run the project:
+Run the project:
 
 ```
 mvn javafx:run
 ```
 
-For modular projects, to create and run a custom image:
+For modular projects, create and run a custom image:
 
 ```
 mvn javafx:jlink
 
 target/image/bin/java -m hellofx/org.openjfx.App
-```
-
-### javafx:compile options
-
-When compiling with ``javafx:compile``, the source level, 
-target level and/or the release level for the Java compiler can be set. 
-The default value is 11.
-
-This configuration changes these levels to 12, for instance:
-
-```
-<plugin>
-    <groupId>org.openjfx</groupId>
-    <artifactId>javafx-maven-plugin</artifactId>
-    <version>0.0.4</version>
-    <configuration>
-        <source>12</source>
-        <target>12</target>
-        <release>12</release>
-        <mainClass>org.openjfx.hellofx/org.openjfx.App</mainClass>
-    </configuration>
-</plugin>
-```
-
-If required, compiler arguments can be set. For instance:
-
-```
-<plugin>
-    <groupId>org.openjfx</groupId>
-    <artifactId>javafx-maven-plugin</artifactId>
-    <version>0.0.4</version>
-    <configuration>
-        <compilerArgs>
-            <arg>--add-exports</arg>
-            <arg>javafx.graphics/com.sun.glass.ui=org.openjfx.hellofx</arg>
-        </compilerArgs>
-        <mainClass>org.openjfx.hellofx/org.openjfx.App</mainClass>
-    </configuration>
-</plugin>
 ```
 
 ### javafx:run options
@@ -123,11 +77,11 @@ Optionally, the configuration can be modified with:
 - `mainClass`: The main class, fully qualified name, with or without module name
 - `workingDirectory`: The current working directory
 - `skip`: Skip the execution. Values: false (default), true
-- `outputFile` File to redirect the process output
+- `outputFile`: File to redirect the process output
 - `options`: A list of VM options passed to the executable.
 - `commandlineArgs`: Arguments separated by space for the executed program
 - `includePathExceptionsInClasspath`: When resolving the module-path, setting this value to true will include the 
-dependencies that generate path exceptions in the classpath. By default the value is false, and these dependencies 
+dependencies that generate path exceptions in the classpath. By default, the value is false, and these dependencies 
 won't be included.
 
 For instance, the following configuration adds some VM options and a command line argument:
@@ -150,10 +104,8 @@ For instance, the following configuration adds some VM options and a command lin
 
 **Note**
 
-It is possible to use a local SDK instead of Maven Central. 
-This is helpful for developers trying to test a local build of OpenJFX. 
-Since transitive dependencies are not resolved, 
-all the required jars needs to be added as a separate dependency, like:
+It is possible to use a local SDK instead of Maven Central. This is helpful for developers trying to test a local build of OpenJFX. 
+Since transitive dependencies are not resolved, all the required jars needs to be added as a separate dependency, like:
 
 ```
 <properties>
@@ -211,7 +163,7 @@ For instance, with the following configuration:
 </plugin>
 ```
 
-a custom image can be created and run as:
+A custom image can be created and run as:
 
 ```
 mvn clean javafx:jlink
