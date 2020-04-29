@@ -72,9 +72,9 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
     /**
      * Compression level of the resources being used, equivalent to:
      * <code>-c, --compress=level</code>. Valid values: <code>0, 1, 2</code>,
-     * default 2
+     * default 0
      */
-    @Parameter(property = "javafx.compress", defaultValue = "2")
+    @Parameter(property = "javafx.compress", defaultValue = "0")
     private Integer compress;
 
     /**
