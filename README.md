@@ -177,6 +177,7 @@ all the required jars needs to be added as a separate dependency, like:
 The same command line options for `jlink` can be set:
 
 - `stripDebug`: Strips debug information out. Values: false (default) or true
+- `stripJavaDebugAttributes`: Strip Java debug attributes out (since Java 13), Values: false (default) or true
 - `compress`: Compression level of the resources being used. Values: 0 (default), 1, 2. 
 - `noHeaderFiles`: Removes the `includes` directory in the resulting runtime image. Values: false (default) or true
 - `noManPages`: Removes the `man` directory in the resulting runtime image. Values: false (default) or true

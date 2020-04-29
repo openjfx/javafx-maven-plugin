@@ -34,6 +34,7 @@ import org.codehaus.plexus.archiver.zip.ZipArchiver;
 import org.codehaus.plexus.util.IOUtil;
 import org.codehaus.plexus.util.StringUtils;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -45,11 +46,14 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Mojo(name = "jlink", requiresDependencyResolution = ResolutionScope.RUNTIME)
 @Execute(phase = LifecyclePhase.PROCESS_CLASSES)
 public class JavaFXJLinkMojo extends JavaFXBaseMojo {
+
+    private static final Pattern JLINK_VERSION_PATTERN = Pattern.compile("(1[3-9]|[2-9][0-9]|\\d{3,})");
 
     /**
      * Strips debug information out, equivalent to <code>-G, --strip-debug</code>,
@@ -57,6 +61,13 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
      */
     @Parameter(property = "javafx.stripDebug", defaultValue = "false")
     private boolean stripDebug;
+
+    /**
+     * Strip Java debug attributes out, equivalent to <code>--strip-java-debug-attributes</code>,
+     * default false
+     */
+    @Parameter(property = "javafx.stripJavaDebugAttributes", defaultValue = "false")
+    private boolean stripJavaDebugAttributes;
 
     /**
      * Compression level of the resources being used, equivalent to:
@@ -159,6 +170,12 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
         if (isTargetUsingJava8(commandLine)) {
             getLog().info("Jlink not supported with Java 1.8");
             return;
+        }
+
+        if (stripJavaDebugAttributes && !isJLinkVersion13orHigher(commandLine.getExecutable())) {
+            stripJavaDebugAttributes = false;
+            getLog().warn("JLink parameter --strip-java-debug-attributes only supported for version 13 and higher");
+            getLog().warn("The option 'stripJavaDebugAttributes' was skipped");
         }
 
         try {
@@ -287,6 +304,9 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
         if (stripDebug) {
             commandArguments.add(" --strip-debug");
         }
+        if (stripJavaDebugAttributes) {
+            commandArguments.add(" --strip-java-debug-attributes");
+        }
         if (bindServices) {
             commandArguments.add(" --bind-services");
         }
@@ -335,6 +355,31 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
             throw new MojoExecutionException(e.getMessage(), e);
         }
         return resultArchive;
+    }
+
+    private boolean isJLinkVersion13orHigher(String jlinkExePath) {
+        CommandLine versionCommandLine = new CommandLine(jlinkExePath)
+                .addArgument("--version");
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        int resultCode = -1;
+
+        try {
+            resultCode = executeCommandLine(new DefaultExecutor(), versionCommandLine, null, baos, System.err);
+        } catch (IOException e) {
+            if (getLog().isDebugEnabled()) {
+                getLog().error("Error getting JLink version", e);
+            }
+        }
+
+        if (resultCode != 0) {
+            getLog().error("Unable to get JLink version");
+            getLog().error("Result of " + versionCommandLine + " execution is: '" + resultCode + "'");
+            return false;
+        }
+
+        String versionStr = new String(baos.toByteArray());
+        return JLINK_VERSION_PATTERN.matcher(versionStr).lookingAt();
     }
 
     // for tests
