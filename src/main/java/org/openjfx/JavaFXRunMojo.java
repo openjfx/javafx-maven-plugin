@@ -232,4 +232,8 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
     void setCommandlineArgs(String commandlineArgs) {
         this.commandlineArgs = commandlineArgs;
     }
+
+    List<String> splitComplexArgumentStringAdapter(String vmOptions) {
+        return splitComplexArgumentString(vmOptions);
+    }
 }
