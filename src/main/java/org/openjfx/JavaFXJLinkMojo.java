@@ -156,19 +156,16 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
             return;
         }
 
-        if (jlinkExecutable == null) {
-            throw new MojoExecutionException("The parameter 'jlinkExecutable' is missing or invalid");
-        }
-
         if (basedir == null) {
             throw new IllegalStateException( "basedir is null. Should not be possible." );
         }
 
         Map<String, String> enviro = handleSystemEnvVariables();
-        CommandLine commandLine = getExecutablePath(jlinkExecutable, enviro, workingDirectory);
+
+        CommandLine commandLine = getCommandLine(resolve("jlinkExecutable", jlinkExecutable, enviro, workingDirectory));
 
         if (isTargetUsingJava8(commandLine)) {
-            getLog().info("Jlink not supported with Java 1.8");
+            getLog().error("jlink is not supported on Java 8");
             return;
         }
 

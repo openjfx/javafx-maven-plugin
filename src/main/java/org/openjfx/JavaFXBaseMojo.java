@@ -32,6 +32,8 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.toolchain.Toolchain;
+import org.apache.maven.toolchain.ToolchainManager;
 import org.codehaus.plexus.languages.java.jpms.JavaModuleDescriptor;
 import org.codehaus.plexus.languages.java.jpms.LocationManager;
 import org.codehaus.plexus.languages.java.jpms.ModuleNameSource;
@@ -49,18 +51,26 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.stream.Collectors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
+
+import static java.lang.String.format;
+import static java.util.Arrays.asList;
+import static java.util.Arrays.stream;
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
+
 
 abstract class JavaFXBaseMojo extends AbstractMojo {
 
+    static final Pattern WINDOWS_EXECUTABLE_PATTERN = Pattern.compile("^(?<basename>.+)(?<extension>\\.(exe|com|bat|cmd))$");
     static final String JAVAFX_PREFIX = "javafx";
 
     @Parameter(defaultValue = "${project}", readonly = true)
@@ -74,6 +84,9 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
 
     @Component
     private LocationManager locationManager;
+
+    @Component
+    private ToolchainManager toolchainManager;
 
     @Parameter(property = "javafx.mainClass", required = true)
     String mainClass;
@@ -167,8 +180,12 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
     }
 
     static boolean isTargetUsingJava8(CommandLine commandLine) {
-        final String java = commandLine.getExecutable();
-        return java != null && Files.exists(Paths.get(java).resolve("../../jre/lib/rt.jar").normalize());
+        final String executable = commandLine.getExecutable();
+        try {
+            return executable != null && Files.exists(Paths.get(executable).toRealPath().resolve("../../jre/lib/rt.jar").normalize());
+        } catch (IOException e) {
+            return false;
+        }
     }
 
     void preparePaths(Path jdkHome) throws MojoExecutionException {
@@ -297,7 +314,7 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
         list.addAll(project.getDependencies().stream()
                 .filter(d -> d.getSystemPath() != null && ! d.getSystemPath().isEmpty())
                 .map(d -> new File(d.getSystemPath()))
-                .collect(Collectors.toList()));
+                .collect(toList()));
 
         list.addAll(project.getArtifacts().stream()
                 .sorted((a1, a2) -> {
@@ -309,10 +326,10 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
                     return compare;
                 })
                 .map(Artifact::getFile)
-                .collect(Collectors.toList()));
+                .collect(toList()));
         return list.stream()
                 .distinct()
-                .collect(Collectors.toList());
+                .collect(toList());
     }
 
     void handleWorkingDirectory() throws MojoExecutionException {
@@ -342,54 +359,116 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
         return enviro;
     }
 
-    CommandLine getExecutablePath(String executable, Map<String, String> enviro, File dir) {
-        File execFile = new File(executable);
-        String exec = null;
-        if (execFile.isFile()) {
-            getLog().debug("Toolchains are ignored, 'executable' parameter is set to " + executable);
-            exec = execFile.getAbsolutePath();
+    protected Path resolve(
+            final String property,
+            final String toolSpec,
+            final Map<String, String> env,
+            final File workingDirectory
+    ) throws MojoExecutionException {
+
+        Path tool = Paths.get(toolSpec);
+
+        // if the set path is absolute, use it
+        if (tool.isAbsolute()) {
+            getLog().warn(format("Toolchain will be ignored, '%s' is set to '%s'", property, tool));
+            return tool;
         }
 
-        if (exec == null) {
-            String javaHomeFromEnv = getJavaHomeEnv(enviro);
-            if (javaHomeFromEnv != null && ! javaHomeFromEnv.isEmpty()) {
-                exec = findExecutable(executable, Arrays.asList(javaHomeFromEnv.concat(File.separator).concat("bin")));
+        // munge tool name as needed for following steps
+        final List<String> candidateToolNames = getCandidateToolNames(tool);
+
+        // if the path is unqualified resolve to a directory in the following sequence
+        if (tool.equals(tool.getFileName())) {
+
+            // try to resolve to the maven toolchain
+            Toolchain toolchain = getJDKToolchain();
+            if (toolchain != null) {
+                getLog().info("Toolchain in javafx-maven-plugin: " + toolchain);
+                final String pathString = toolchain.findTool(tool.toString());
+                if (pathString != null) {
+                    return Paths.get(pathString);
+                }
+            }
+
+            // try to resolve to the invocation JDK
+            final Path jdkBin = Paths.get(System.getProperty("java.home"), "../bin");
+            for (String candidate : candidateToolNames) {
+                Path toolPath = jdkBin.resolve(candidate).normalize().toAbsolutePath();
+                if (Files.isExecutable(toolPath)) {
+                    return toolPath;
+                }
+            }
+
+            // search $PATH explicitly
+            for (final Path basedir : getExecutablePaths(env)) {
+                for (String candidate : candidateToolNames) {
+                    Path toolPath = basedir.resolve(candidate).normalize().toAbsolutePath();
+                    if (Files.isExecutable(toolPath)) {
+                        return toolPath;
+                    }
+                }
+            }
+
+        }
+
+        // resolve relative to the working directory
+        for (String candidate : candidateToolNames) {
+            Path toolPath = workingDirectory.toPath().resolve(candidate).normalize().toAbsolutePath();
+            if (Files.isExecutable(toolPath)) {
+                return toolPath;
             }
         }
 
-        if (exec == null && OS.isFamilyWindows()) {
-            List<String> paths = this.getExecutablePaths(enviro);
-            paths.add(0, dir.getAbsolutePath());
-            exec = findExecutable(executable, paths);
+        // fall back to treating the tool path as basedir-relative
+        for (String candidate : candidateToolNames) {
+            Path toolPath = basedir.toPath().resolve(candidate).normalize().toAbsolutePath();
+            if (Files.isExecutable(toolPath)) {
+                return toolPath;
+            }
         }
 
-        if (exec == null) {
-            exec = executable;
-        }
+        throw new MojoExecutionException(format("Could not resolve '%s': %s", property, tool));
+    }
 
-        CommandLine toRet;
-        if (OS.isFamilyWindows() && !hasNativeExtension(exec) && hasExecutableExtension(exec) ) {
-            // run the windows batch script in isolation and exit at the end
-            final String comSpec = System.getenv( "ComSpec" );
-            toRet = new CommandLine( comSpec == null ? "cmd" : comSpec );
-            toRet.addArgument( "/c" );
-            toRet.addArgument( exec );
+    private static List<String> getCandidateToolNames(final Path tool) {
+        final List<String> candidateToolNames = new ArrayList<>();
+        final String toolName = tool.toString();
+        final Matcher matcher = WINDOWS_EXECUTABLE_PATTERN.matcher(toolName.toLowerCase());
+        if (OS.isFamilyWindows() && !matcher.matches()) {
+            Stream.of(".exe", ".com", ".cmd", ".bat")
+                  .forEach(extension -> candidateToolNames.add(toolName + extension));
+        } else if (!OS.isFamilyWindows() && matcher.matches()) {
+            candidateToolNames.add(matcher.group("basename"));
         } else {
-            toRet = new CommandLine(exec);
+            candidateToolNames.add(toolName);
+        }
+        return candidateToolNames;
+    }
+
+    CommandLine getCommandLine(Path exec) {
+        final CommandLine toRet;
+        if (isWindowsBatchFile(exec)) {
+            // run the windows batch script in isolation and exit at the end
+            final String comSpec = System.getenv("ComSpec");
+            toRet = new CommandLine(comSpec == null ? "cmd" : comSpec);
+            toRet.addArgument("/c");
+            toRet.addArgument(exec.toString());
+        } else {
+            toRet = new CommandLine(exec.toFile());
         }
         getLog().debug("Executable " + toRet.toString());
         return toRet;
     }
 
     int executeCommandLine(Executor exec, CommandLine commandLine, Map<String, String> enviro,
-                           OutputStream out, OutputStream err) throws ExecuteException, IOException {
+                           OutputStream out, OutputStream err) throws IOException {
         // note: don't use BufferedOutputStream here since it delays the outputs MEXEC-138
         PumpStreamHandler psh = new PumpStreamHandler(out, err, System.in);
         return executeCommandLine(exec, commandLine, enviro, psh);
     }
 
     int executeCommandLine(Executor exec, CommandLine commandLine, Map<String, String> enviro,
-                           FileOutputStream outputFile) throws ExecuteException, IOException {
+                           FileOutputStream outputFile) throws IOException {
         BufferedOutputStream bos = new BufferedOutputStream(outputFile);
         PumpStreamHandler psh = new PumpStreamHandler(bos);
         return executeCommandLine(exec, commandLine, enviro, psh);
@@ -409,35 +488,17 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
         return path.getRoot().resolve(path.subpath(0, path.getNameCount() - depth));
     }
 
-    private static String findExecutable(final String executable, final List<String> paths) {
-        File f = null;
-        search: for (final String path : paths) {
-            f = new File(path, executable);
-            if (!OS.isFamilyWindows() && f.isFile()) {
-                break;
-            } else {
-                for (final String extension : getExecutableExtensions()) {
-                    f = new File(path, executable + extension);
-                    if (f.isFile()) {
-                        break search;
-                    }
-                }
-            }
-        }
-
-        if (f == null || !f.exists()) {
-            return null;
-        }
-        return f.getAbsolutePath();
+    private static boolean isWindowsBatchFile(final Path exec) {
+        return OS.isFamilyWindows() && !hasNativeExtension(exec) && hasExecutableExtension(exec);
     }
 
-    private static boolean hasNativeExtension(final String exec) {
-        final String lowerCase = exec.toLowerCase();
+    private static boolean hasNativeExtension(final Path exec) {
+        final String lowerCase = exec.getFileName().toString().toLowerCase();
         return lowerCase.endsWith(".exe") || lowerCase.endsWith(".com");
     }
 
-    private static boolean hasExecutableExtension(final String exec) {
-        final String lowerCase = exec.toLowerCase();
+    private static boolean hasExecutableExtension(final Path exec) {
+        final String lowerCase = exec.getFileName().toString().toLowerCase();
         for (final String ext : getExecutableExtensions()) {
             if (lowerCase.endsWith(ext)) {
                 return true;
@@ -448,35 +509,17 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
 
     private static List<String> getExecutableExtensions() {
         final String pathExt = System.getenv("PATHEXT");
-        return pathExt == null ? Arrays.asList(".bat", ".cmd")
-                : Arrays.asList(StringUtils.split(pathExt.toLowerCase(), File.pathSeparator));
+        return pathExt == null ? asList(".bat", ".cmd")
+                : asList(StringUtils.split(pathExt.toLowerCase(), File.pathSeparator));
     }
 
-    private List<String> getExecutablePaths(Map<String, String> enviro) {
-        List<String> paths = new ArrayList<>();
-        paths.add("");
-
-        String path = enviro.get("PATH");
-        if (path != null) {
-            paths.addAll(Arrays.asList(StringUtils.split(path, File.pathSeparator)));
-        }
-        return paths;
-    }
-
-    private String getJavaHomeEnv(Map<String, String> enviro) {
-        String javahome = enviro.get("JAVA_HOME");
-        if (javahome == null || javahome.isEmpty()) {
-            return null;
-        }
-
-        int pathStartIndex = javahome.charAt(0) == '"' ? 1 : 0;
-        int pathEndIndex = javahome.charAt(javahome.length() - 1) == '"' ? javahome.length() - 1 : javahome.length();
-
-        return javahome.substring(pathStartIndex, pathEndIndex);
+    private List<Path> getExecutablePaths(Map<String, String> env) {
+        String path = env.get("PATH");
+        return path == null ? emptyList() : stream(path.split(File.pathSeparator)).map(Paths::get).collect(toList());
     }
 
     private int executeCommandLine(Executor exec, final CommandLine commandLine, Map<String, String> enviro,
-                                   final PumpStreamHandler psh) throws ExecuteException, IOException {
+                                   final PumpStreamHandler psh) throws IOException {
         exec.setStreamHandler(psh);
 
         int result;
@@ -519,4 +562,11 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
         }
         return processDestroyer;
     }
+
+    protected Toolchain getJDKToolchain() {
+        return (toolchainManager == null || session == null)
+               ? null
+               : toolchainManager.getToolchainFromBuildContext("jdk", session);
+    }
+
 }

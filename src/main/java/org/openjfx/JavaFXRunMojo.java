@@ -58,10 +58,6 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
             return;
         }
 
-        if (executable == null) {
-            throw new MojoExecutionException("The parameter 'executable' is missing or invalid");
-        }
-
         if (basedir == null) {
             throw new IllegalStateException( "basedir is null. Should not be possible." );
         }
@@ -70,7 +66,8 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
             handleWorkingDirectory();
 
             Map<String, String> enviro = handleSystemEnvVariables();
-            CommandLine commandLine = getExecutablePath(executable, enviro, workingDirectory);
+
+            CommandLine commandLine = getCommandLine(resolve("executable", executable, enviro, workingDirectory));
 
             boolean usingOldJDK = isTargetUsingJava8(commandLine);
 
