@@ -34,9 +34,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Mojo(name = "run", requiresDependencyResolution = ResolutionScope.RUNTIME)
@@ -127,6 +129,8 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
                     .filter(Objects::nonNull)
                     .filter(String.class::isInstance)
                     .map(String.class::cast)
+                    .map(this::splitComplexArgumentString)
+                    .flatMap(Collection::stream)
                     .forEach(commandArguments::add);
         }
         if (!oldJDK) {
@@ -179,6 +183,42 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
         return commandArguments;
     }
 
+    private List<String> splitComplexArgumentString(String argumentString) {
+        char[] strArr = argumentString.trim().toCharArray();
+
+        List<String> splitedArgs = new ArrayList<>();
+        StringBuilder sb = new StringBuilder();
+
+        char expectedSeparator = ' ';
+        for (int i = 0; i < strArr.length; i++) {
+            char item = strArr[i];
+
+            if (item == expectedSeparator
+                    || (expectedSeparator == ' ' && Pattern.matches("\\s", String.valueOf(item))) ) {
+
+                if (expectedSeparator == '"' || expectedSeparator == '\'') {
+                    sb.append(item);
+                    expectedSeparator = ' ';
+                } else if (expectedSeparator == ' ' && sb.length() > 0) {
+                    splitedArgs.add(sb.toString());
+                    sb.delete(0, sb.length());
+                }
+            } else {
+                if (expectedSeparator == ' ' && (item == '"' || item == '\'')) {
+                    expectedSeparator = item;
+                }
+
+                sb.append(item);
+            }
+
+            if (i == strArr.length - 1 && sb.length() > 0) {
+                splitedArgs.add(sb.toString());
+            }
+        }
+
+        return splitedArgs;
+    }
+
     // for tests
 
     void setExecutable(String executable) {
@@ -191,5 +231,9 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
 
     void setCommandlineArgs(String commandlineArgs) {
         this.commandlineArgs = commandlineArgs;
+    }
+
+    List<String> splitComplexArgumentStringAdapter(String vmOptions) {
+        return splitComplexArgumentString(vmOptions);
     }
 }
