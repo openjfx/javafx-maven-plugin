@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Gluon
+ * Copyright 2019, 2020, Gluon
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -201,69 +201,58 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
             getLog().debug("Total dependencyArtifacts: " + dependencyArtifacts.size());
             ResolvePathsRequest<File> fileResolvePathsRequest = ResolvePathsRequest.ofFiles(dependencyArtifacts);
 
-            ResolvePathsResult<File> resolvePathsResult;
+            getLog().debug("module descriptor: " + moduleDescriptorPath);
             if (moduleDescriptorPath != null) {
-                getLog().debug("module descriptor: " + moduleDescriptorPath);
                 fileResolvePathsRequest.setMainModuleDescriptor(moduleDescriptorPath);
             }
             if (jdkHome != null) {
                 fileResolvePathsRequest.setJdkHome(jdkHome.toFile());
             }
-            resolvePathsResult = locationManager.resolvePaths(fileResolvePathsRequest);
-
-            if (!resolvePathsResult.getPathExceptions().isEmpty() && !isMavenUsingJava8()) {
-                // for each path exception, show a warning to plugin user...
-                for (Map.Entry<File, Exception> pathException : resolvePathsResult.getPathExceptions().entrySet()) {
-                    Throwable cause = pathException.getValue();
-                    while (cause.getCause() != null) {
-                        cause = cause.getCause();
-                    }
-                    String fileName = pathException.getKey().getName();
-                    getLog().warn("Can't extract module name from " + fileName + ": " + cause.getMessage());
-                }
-                // ...if includePathExceptionsInClasspath is NOT enabled; provide configuration hint to plugin user
-                if (!includePathExceptionsInClasspath) {
-                    getLog().warn("Some dependencies encountered issues while attempting to be resolved as modules" +
-                        " and will not be included in the classpath; you can change this behavior via the " +
-                        " 'includePathExceptionsInClasspath' configuration parameter.");
-                }
-            }
+            ResolvePathsResult<File> resolvePathsResult = locationManager.resolvePaths(fileResolvePathsRequest);
+            resolvePathsResult.getPathElements().forEach((key, value) -> pathElements.put(key.getPath(), value));
 
             if (moduleDescriptorPath != null) {
-                moduleDescriptor = resolvePathsResult.getMainModuleDescriptor();
-            }
-
-            for (Map.Entry<File, ModuleNameSource> entry : resolvePathsResult.getModulepathElements().entrySet()) {
-                if (ModuleNameSource.FILENAME.equals(entry.getValue())) {
-                    final String message = "Required filename-based automodules detected. "
-                            + "Please don't publish this project to a public artifact repository!";
-
-                    if (moduleDescriptor != null && moduleDescriptor.exports().isEmpty()) {
-                        // application
-                        getLog().info(message);
-                    } else {
-                        // library
-                        getLog().warn(message);
+                if (!resolvePathsResult.getPathExceptions().isEmpty() && !isMavenUsingJava8()) {
+                    // for each path exception, show a warning to plugin user...
+                    for (Map.Entry<File, Exception> pathException : resolvePathsResult.getPathExceptions().entrySet()) {
+                        Throwable cause = pathException.getValue();
+                        while (cause.getCause() != null) {
+                            cause = cause.getCause();
+                        }
+                        String fileName = pathException.getKey().getName();
+                        getLog().warn("Can't extract module name from " + fileName + ": " + cause.getMessage());
                     }
-                    break;
+                    // ...if includePathExceptionsInClasspath is NOT enabled; provide configuration hint to plugin user
+                    if (!includePathExceptionsInClasspath) {
+                        getLog().warn("Some dependencies encountered issues while attempting to be resolved as modules" +
+                                " and will not be included in the classpath; you can change this behavior via the " +
+                                " 'includePathExceptionsInClasspath' configuration parameter.");
+                    }
                 }
-            }
+                moduleDescriptor = resolvePathsResult.getMainModuleDescriptor();
+                for (Map.Entry<File, ModuleNameSource> entry : resolvePathsResult.getModulepathElements().entrySet()) {
+                    if (ModuleNameSource.FILENAME.equals(entry.getValue())) {
+                        final String message = "Required filename-based automodules detected. "
+                                + "Please don't publish this project to a public artifact repository!";
 
-            getLog().debug("pathElements: " + resolvePathsResult.getPathElements().size());
-            resolvePathsResult.getPathElements().forEach((key, value) -> pathElements.put(key.getPath(), value));
-            getLog().debug("classpathElements: " + resolvePathsResult.getClasspathElements().size());
-            resolvePathsResult.getClasspathElements()
-                    .forEach(file -> classpathElements.add(file.getPath()));
-            getLog().debug("modulepathElements: " + resolvePathsResult.getModulepathElements().size());
-            resolvePathsResult.getModulepathElements().keySet()
-                    .forEach(file -> modulepathElements.add(file.getPath()));
+                        if (moduleDescriptor != null && moduleDescriptor.exports().isEmpty()) {
+                            // application
+                            getLog().info(message);
+                        } else {
+                            // library
+                            getLog().warn(message);
+                        }
+                        break;
+                    }
+                }
+                resolvePathsResult.getClasspathElements().forEach(file -> classpathElements.add(file.getPath()));
+                resolvePathsResult.getModulepathElements().keySet().forEach(file -> modulepathElements.add(file.getPath()));
 
-            if (includePathExceptionsInClasspath) {
-                resolvePathsResult.getPathExceptions().keySet()
-                    .forEach(file -> classpathElements.add(file.getPath()));
-            }
-
-            if (moduleDescriptorPath == null) {
+                if (includePathExceptionsInClasspath) {
+                    resolvePathsResult.getPathExceptions().keySet()
+                            .forEach(file -> classpathElements.add(file.getPath()));
+                }
+            } else {
                 // non-modular projects
                 pathElements.forEach((k, v) -> {
                     if (v != null && v.name() != null && v.name().startsWith(JAVAFX_PREFIX)) {
@@ -274,7 +263,6 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
                     }
                 });
             }
-
         } catch (Exception e) {
             getLog().warn(e.getMessage());
         }
