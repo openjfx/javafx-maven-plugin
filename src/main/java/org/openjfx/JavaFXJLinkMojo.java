@@ -20,6 +20,7 @@ import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.Executor;
+import org.apache.commons.exec.OS;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
@@ -165,6 +166,7 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
         }
 
         handleWorkingDirectory();
+
         Map<String, String> enviro = handleSystemEnvVariables();
         CommandLine commandLine = getExecutablePath(jlinkExecutable, enviro, workingDirectory);
 
@@ -213,36 +215,10 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
                 }
 
                 if (launcher != null && ! launcher.isEmpty()) {
-                    Path launcherPath = Paths.get(builddir.getAbsolutePath(), jlinkImageName, "bin", launcher);
-                    if (options != null) {
-                        String optionsString = options.stream()
-                            .filter(Objects::nonNull)
-                            .filter(String.class::isInstance)
-                            .map(String.class::cast)
-                            .collect(Collectors.joining(" "));
+                    patchLauncherScript(launcher);
 
-                        // Add vm options to launcher script
-                        List<String> lines = Files.lines(launcherPath)
-                                .map(line -> {
-                                    if ("JLINK_VM_OPTIONS=".equals(line)) {
-                                        return "JLINK_VM_OPTIONS=\"" + optionsString + "\"";
-                                    }
-                                    return line;
-                                })
-                                .collect(Collectors.toList());
-                        Files.write(launcherPath, lines);
-                    }
-                    if (commandlineArgs != null) {
-                        // Add options to launcher script
-                        List<String> lines = Files.lines(launcherPath)
-                                .map(line -> {
-                                    if (line.endsWith("$@")) {
-                                        return line.replace("$@", commandlineArgs + " $@");
-                                    }
-                                    return line;
-                                })
-                                .collect(Collectors.toList());
-                        Files.write(launcherPath, lines);
+                    if (OS.isFamilyWindows()) {
+                        patchLauncherScript(launcher + ".bat");
                     }
                 }
 
@@ -262,6 +238,51 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
             }
         } catch (Exception e) {
             throw new MojoExecutionException("Error", e);
+        }
+    }
+
+    private void patchLauncherScript(String launcherFilename) throws IOException {
+        Path launcherPath = Paths.get(builddir.getAbsolutePath(), jlinkImageName, "bin", launcherFilename);
+
+        if (!Files.exists(launcherPath)) {
+            getLog().debug("Launcher file not exist: " + launcherPath);
+            return;
+        }
+
+        if (options != null) {
+            String optionsString = options.stream()
+                    .filter(Objects::nonNull)
+                    .filter(String.class::isInstance)
+                    .map(String.class::cast)
+                    .collect(Collectors.joining(" "));
+
+            // Add vm options to launcher script
+            List<String> lines = Files.lines(launcherPath)
+                    .map(line -> {
+                        boolean unixOptionsLine = "JLINK_VM_OPTIONS=".equals(line);
+                        boolean winOptionsLine = "set JLINK_VM_OPTIONS=".equals(line);
+
+                        if (unixOptionsLine || winOptionsLine) {
+                            String lineWrapper = unixOptionsLine ? "\"" : "";
+                            return line + lineWrapper + optionsString + lineWrapper;
+                        }
+                        return line;
+                    })
+                    .collect(Collectors.toList());
+            Files.write(launcherPath, lines);
+        }
+
+        if (commandlineArgs != null) {
+            // Add options to launcher script
+            List<String> lines = Files.lines(launcherPath)
+                    .map(line -> {
+                        if (line.endsWith("$@")) {
+                            return line.replace("$@", commandlineArgs + " $@");
+                        }
+                        return line;
+                    })
+                    .collect(Collectors.toList());
+            Files.write(launcherPath, lines);
         }
     }
 
