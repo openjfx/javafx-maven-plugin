@@ -39,6 +39,7 @@ import org.codehaus.plexus.languages.java.jpms.ResolvePathsRequest;
 import org.codehaus.plexus.languages.java.jpms.ResolvePathsResult;
 import org.codehaus.plexus.util.StringUtils;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
+import org.openjfx.model.RuntimePath;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -58,6 +59,9 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static org.openjfx.model.RuntimePath.CLASSPATH;
+import static org.openjfx.model.RuntimePath.MODULEPATH;
 
 abstract class JavaFXBaseMojo extends AbstractMojo {
 
@@ -89,6 +93,9 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
 
     @Parameter(readonly = true, required = true, defaultValue = "${project.build.directory}")
     File builddir;
+
+    @Parameter(property = "javafx.runtimePath", defaultValue = "DEFAULT")
+    RuntimePath runtimePath;
 
     /**
      * The current working directory. Optional. If not specified, basedir will be used.
@@ -265,6 +272,23 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
             }
         } catch (Exception e) {
             getLog().warn(e.getMessage());
+        }
+
+        if (runtimePath == MODULEPATH) {
+            if (moduleDescriptor == null) {
+                // target/classes should still be on classpath
+                final List<String> classpathJars = classpathElements.stream()
+                        .filter(ce -> ce.endsWith(".jar"))
+                        .collect(Collectors.toList());
+                modulepathElements.addAll(classpathJars);
+                classpathElements.removeAll(classpathJars);
+            } else {
+                modulepathElements.addAll(classpathElements);
+                classpathElements.clear();
+            }
+        } else if (runtimePath == CLASSPATH) {
+            classpathElements.addAll(modulepathElements);
+            modulepathElements.clear();
         }
 
         getLog().debug("Classpath:" + classpathElements.size());
