@@ -164,6 +164,8 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
             throw new IllegalStateException( "basedir is null. Should not be possible." );
         }
 
+        handleWorkingDirectory();
+        
         Map<String, String> enviro = handleSystemEnvVariables();
         CommandLine commandLine = getExecutablePath(jlinkExecutable, enviro, workingDirectory);
 
@@ -179,7 +181,6 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
         }
 
         try {
-            handleWorkingDirectory();
 
             List<String> commandArguments = createCommandArguments();
             String[] args = commandArguments.toArray(new String[commandArguments.size()]);
