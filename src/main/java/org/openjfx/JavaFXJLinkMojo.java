@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Gluon
+ * Copyright 2019, 2020, Gluon
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -164,6 +164,7 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
             throw new IllegalStateException( "basedir is null. Should not be possible." );
         }
 
+        handleWorkingDirectory();
         Map<String, String> enviro = handleSystemEnvVariables();
         CommandLine commandLine = getExecutablePath(jlinkExecutable, enviro, workingDirectory);
 
@@ -179,8 +180,6 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
         }
 
         try {
-            handleWorkingDirectory();
-
             List<String> commandArguments = createCommandArguments();
             String[] args = commandArguments.toArray(new String[commandArguments.size()]);
             commandLine.addArguments(args, false);
