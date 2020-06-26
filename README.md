@@ -129,6 +129,7 @@ Optionally, the configuration can be modified with:
 - `includePathExceptionsInClasspath`: When resolving the module-path, setting this value to true will include the 
 dependencies that generate path exceptions in the classpath. By default the value is false, and these dependencies 
 won't be included.
+- `jlinkOptions`: A list of options passed to the jlink executable.
 - `runtimePath`: Allows to run the application by adding all the dependencies on either classpath or modulepath.
 Values: MODULEPATH, CLASSPATH or DEFAULT.
 

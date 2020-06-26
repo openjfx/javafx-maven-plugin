@@ -43,6 +43,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -150,6 +151,12 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
      */
     @Component(role = Archiver.class, hint = "zip")
     private ZipArchiver zipArchiver;
+
+    /**
+     * A list of options passed to the jlink {@code executable}.
+     */
+    @Parameter
+    List<?> jlinkOptions;
 
     public void execute() throws MojoExecutionException {
         if (skip) {
@@ -289,6 +296,17 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
     private List<String> createCommandArguments() throws MojoExecutionException, MojoFailureException {
         List<String> commandArguments = new ArrayList<>();
         preparePaths(getParent(Paths.get(jlinkExecutable), 2));
+
+        if (jlinkOptions != null) {
+            jlinkOptions.stream()
+                    .filter(Objects::nonNull)
+                    .filter(String.class::isInstance)
+                    .map(String.class::cast)
+                    .map(this::splitComplexArgumentString)
+                    .flatMap(Collection::stream)
+                    .forEach(commandArguments::add);
+        }
+
         if (modulepathElements != null && !modulepathElements.isEmpty()) {
             commandArguments.add(" --module-path");
             String modulePath = StringUtils.join(modulepathElements.iterator(), File.pathSeparator);

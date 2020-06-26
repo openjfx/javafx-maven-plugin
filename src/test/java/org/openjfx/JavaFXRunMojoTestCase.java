@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Gluon
+ * Copyright 2019, 2020, Gluon
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -205,35 +205,5 @@ public class JavaFXRunMojoTestCase extends AbstractMojoTestCase {
             result += (result.length() == 0 ? "" : " ") + arg;
         }
         return result;
-    }
-
-    public void testSplitComplexArgumentString() {
-        String option = "param1 " +
-                "param2   \n   " +
-                "param3\n" +
-                "param4=\"/path/to/my file.log\"   " +
-                "'var\"foo   var\"foo' " +
-                "'var\"foo'   " +
-                "'var\"foo' " +
-                "\"foo'var foo'var\" " +
-                "\"foo'var\" " +
-                "\"foo'var\"";
-
-        String expected = "START," +
-                "param1," +
-                "param2," +
-                "param3," +
-                "param4=\"/path/to/my file.log\"," +
-                "'var\"foo   var\"foo'," +
-                "'var\"foo'," +
-                "'var\"foo'," +
-                "\"foo'var foo'var\"," +
-                "\"foo'var\"," +
-                "\"foo'var\"";
-
-        String splitedOption = new JavaFXRunMojo().splitComplexArgumentStringAdapter(option)
-                .stream().reduce("START", (s1, s2) -> s1 + "," + s2);
-
-        assertEquals(expected, splitedOption);
     }
 }
