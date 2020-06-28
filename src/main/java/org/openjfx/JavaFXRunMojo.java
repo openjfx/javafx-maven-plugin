@@ -167,10 +167,10 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
         if (mainClass != null) {
             if (moduleDescriptor != null) {
                 commandArguments.add(" --module");
-                if (!mainClass.contains("/")) {
-                    commandArguments.add(" " + moduleDescriptor.name() + "/" + mainClass);
-                } else {
+                if (mainClass.contains("/")) {
                     commandArguments.add(" " + mainClass);
+                } else {
+                    commandArguments.add(" " + moduleDescriptor.name() + "/" + mainClass);
                 }
             } else {
                 commandArguments.add(" " + mainClass);
