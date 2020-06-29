@@ -170,6 +170,7 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
                 if (mainClass.contains("/")) {
                     commandArguments.add(" " + mainClass);
                 } else {
+                    getLog().warn("Module name not defined in main class. Module name will be assumed from module-info.java");
                     commandArguments.add(" " + moduleDescriptor.name() + "/" + mainClass);
                 }
             } else {
