@@ -15,8 +15,10 @@
  */
 package org.openjfx.model;
 
+/**
+ * Types of RuntimePath
+ */
 public enum RuntimePath {
     CLASSPATH,
-    MODULEPATH,
-    DEFAULT
+    MODULEPATH
 }
