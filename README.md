@@ -110,7 +110,7 @@ The following configuration adds some VM options, and a command line argument:
             <option>--add-opens</option>
             <option>java.base/java.lang=org.openjfx.hellofx</option>
         </options>
-        <commandlineArgs>-Xmx1024m</commandlineArgs>
+        <commandlineArgs>foo</commandlineArgs>
     </configuration>
 </plugin>
 ```
