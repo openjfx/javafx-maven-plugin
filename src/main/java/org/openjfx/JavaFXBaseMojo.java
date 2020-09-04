@@ -95,7 +95,7 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
     @Parameter(readonly = true, required = true, defaultValue = "${project.build.directory}")
     File builddir;
 
-    @Parameter(property = "javafx.runtimePath", defaultValue = "DEFAULT")
+    @Parameter(property = "javafx.runtimePath")
     RuntimePath runtimePath;
 
     /**
