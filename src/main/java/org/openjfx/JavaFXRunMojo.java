@@ -158,7 +158,7 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
             if (moduleDescriptor != null) {
                 commandArguments.add("--module");
             }
-            commandArguments.add(" " + createMainClassString(mainClass, moduleDescriptor));
+            commandArguments.add(createMainClassString(mainClass, moduleDescriptor));
         }
 
         if (commandlineArgs != null) {
@@ -180,9 +180,9 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
     }
 
     private String createMainClassString(String mainClass, JavaModuleDescriptor moduleDescriptor) {
-        if (moduleDescriptor != null &&
-                !mainClass.startsWith(moduleDescriptor.name() + "/")) {
-                return moduleDescriptor.name() + "/" + mainClass;
+        if (moduleDescriptor != null && !mainClass.contains("/")) {
+            getLog().warn("Main module name not found in <mainClass>. Module name will be assumed from module-info.java");
+            return moduleDescriptor.name() + "/" + mainClass;
         }
         return mainClass;
     }
