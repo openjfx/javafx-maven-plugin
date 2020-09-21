@@ -138,28 +138,16 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
         if (!oldJDK) {
             if (runtimePathOption == MODULEPATH || modulepathElements != null && !modulepathElements.isEmpty()) {
                 commandArguments.add(" --module-path");
-                String modulePath = StringUtils.join(modulepathElements.iterator(), File.pathSeparator);
-                commandArguments.add(modulePath);
-
+                commandArguments.add(StringUtils.join(modulepathElements.iterator(), File.pathSeparator));
                 commandArguments.add(" --add-modules");
-                if (moduleDescriptor != null) {
-                    commandArguments.add(" " + moduleDescriptor.name());
-                } else {
-                    String modules = pathElements.values().stream()
-                            .filter(Objects::nonNull)
-                            .map(JavaModuleDescriptor::name)
-                            .filter(Objects::nonNull)
-                            .filter(module -> module.startsWith(JAVAFX_PREFIX) && !module.endsWith("Empty"))
-                            .collect(Collectors.joining(","));
-                    commandArguments.add(" " + modules);
-                }
+                commandArguments.add(createAddModulesString(moduleDescriptor, pathElements));
             }
         }
 
-        if (runtimePathOption == CLASSPATH || classpathElements != null && (oldJDK || !classpathElements.isEmpty())) {
+        if (classpathElements != null && !classpathElements.isEmpty()) {
             commandArguments.add(" -classpath");
             String classpath = "";
-            if (oldJDK || moduleDescriptor != null) {
+            if (oldJDK || runtimePathOption == CLASSPATH) {
                 classpath = project.getBuild().getOutputDirectory() + File.pathSeparator;
             }
             classpath += StringUtils.join(classpathElements.iterator(), File.pathSeparator);
@@ -168,21 +156,35 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
 
         if (mainClass != null) {
             if (moduleDescriptor != null) {
-                commandArguments.add(" --module");
-                if (!mainClass.startsWith(moduleDescriptor.name() + "/")) {
-                    commandArguments.add(" " + moduleDescriptor.name() + "/" + mainClass);
-                } else {
-                    commandArguments.add(" " + mainClass);
-                }
-            } else {
-                commandArguments.add(" " + mainClass);
+                commandArguments.add("--module");
             }
+            commandArguments.add(" " + createMainClassString(mainClass, moduleDescriptor));
         }
 
         if (commandlineArgs != null) {
             commandArguments.add(commandlineArgs);
         }
         return commandArguments;
+    }
+
+    private String createAddModulesString(JavaModuleDescriptor moduleDescriptor, Map<String, JavaModuleDescriptor> pathElements) {
+        if (moduleDescriptor == null) {
+            return pathElements.values().stream()
+                    .filter(Objects::nonNull)
+                    .map(JavaModuleDescriptor::name)
+                    .filter(Objects::nonNull)
+                    .filter(module -> module.startsWith(JAVAFX_PREFIX) && !module.endsWith("Empty"))
+                    .collect(Collectors.joining(","));
+        }
+        return moduleDescriptor.name();
+    }
+
+    private String createMainClassString(String mainClass, JavaModuleDescriptor moduleDescriptor) {
+        if (moduleDescriptor != null &&
+                !mainClass.startsWith(moduleDescriptor.name() + "/")) {
+                return moduleDescriptor.name() + "/" + mainClass;
+        }
+        return mainClass;
     }
 
     // for tests
