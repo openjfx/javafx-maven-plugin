@@ -212,7 +212,7 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
             getLog().debug("Total dependencyArtifacts: " + dependencyArtifacts.size());
             ResolvePathsRequest<File> fileResolvePathsRequest = ResolvePathsRequest.ofFiles(dependencyArtifacts);
 
-            getLog().debug("module descriptor: " + moduleDescriptorPath);
+            getLog().debug("module descriptor path: " + moduleDescriptorPath);
             if (moduleDescriptorPath != null) {
                 fileResolvePathsRequest.setMainModuleDescriptor(moduleDescriptorPath);
             }
@@ -221,6 +221,10 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
             }
             ResolvePathsResult<File> resolvePathsResult = locationManager.resolvePaths(fileResolvePathsRequest);
             resolvePathsResult.getPathElements().forEach((key, value) -> pathElements.put(key.getPath(), value));
+
+            if (runtimePathOption == MODULEPATH && moduleDescriptorPath == null) {
+                throw new MojoExecutionException("module-info.java file is required for MODULEPATH runtimePathOption");
+            }
 
             if (moduleDescriptorPath != null) {
                 if (!resolvePathsResult.getPathExceptions().isEmpty() && !isMavenUsingJava8()) {
@@ -240,7 +244,7 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
                                 " 'includePathExceptionsInClasspath' configuration parameter.");
                     }
                 }
-                moduleDescriptor = resolvePathsResult.getMainModuleDescriptor();
+                moduleDescriptor = createModuleDescriptor(resolvePathsResult);
                 for (Map.Entry<File, ModuleNameSource> entry : resolvePathsResult.getModulepathElements().entrySet()) {
                     if (ModuleNameSource.FILENAME.equals(entry.getValue())) {
                         final String message = "Required filename-based automodules detected. "
@@ -305,6 +309,14 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
 
         getLog().debug("pathElements: " + pathElements.size());
         pathElements.forEach((k, v) -> getLog().debug(" " + k + " :: " + (v != null && v.name() != null ? v.name() : v)));
+    }
+
+    private JavaModuleDescriptor createModuleDescriptor(ResolvePathsResult<File> resolvePathsResult) throws MojoExecutionException {
+        if (runtimePathOption == CLASSPATH) {
+            getLog().debug(CLASSPATH + " runtimePathOption set by user. module-info.java will be ignored.");
+            return null;
+        }
+        return resolvePathsResult.getMainModuleDescriptor();
     }
 
     private List<File> getCompileClasspathElements(MavenProject project) {
