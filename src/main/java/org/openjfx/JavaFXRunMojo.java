@@ -38,11 +38,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static org.openjfx.model.RuntimePath.CLASSPATH;
-import static org.openjfx.model.RuntimePath.MODULEPATH;
+import static org.openjfx.model.RuntimePathOption.CLASSPATH;
+import static org.openjfx.model.RuntimePathOption.MODULEPATH;
 
 @Mojo(name = "run", requiresDependencyResolution = ResolutionScope.RUNTIME)
 @Execute(phase = LifecyclePhase.PROCESS_CLASSES)
@@ -137,7 +136,7 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
                     .forEach(commandArguments::add);
         }
         if (!oldJDK) {
-            if (runtimePath == MODULEPATH || modulepathElements != null && !modulepathElements.isEmpty()) {
+            if (runtimePathOption == MODULEPATH || modulepathElements != null && !modulepathElements.isEmpty()) {
                 commandArguments.add(" --module-path");
                 String modulePath = StringUtils.join(modulepathElements.iterator(), File.pathSeparator);
                 commandArguments.add(modulePath);
@@ -157,7 +156,7 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
             }
         }
 
-        if (runtimePath == CLASSPATH || classpathElements != null && (oldJDK || !classpathElements.isEmpty())) {
+        if (runtimePathOption == CLASSPATH || classpathElements != null && (oldJDK || !classpathElements.isEmpty())) {
             commandArguments.add(" -classpath");
             String classpath = "";
             if (oldJDK || moduleDescriptor != null) {

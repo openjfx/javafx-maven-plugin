@@ -130,7 +130,9 @@ Optionally, the configuration can be modified with:
 dependencies that generate path exceptions in the classpath. By default, the value is false, and these dependencies 
 won't be included.
 - `jlinkOptions`: A list of options passed to the jlink executable.
-- `runtimePath`: Allows to run the application by adding all the dependencies on either classpath or modulepath.
+- `runtimePathOption`: Allows to run the application by adding all the dependencies on either classpath or modulepath.
+A [Launcher class](https://github.com/openjfx/samples/blob/master/CommandLine/Non-modular/CLI/hellofx/src/hellofx/Launcher.java)
+is required to run a JavaFX application from the classpath.
 Values: MODULEPATH or CLASSPATH.
 
 For instance, the following configuration adds some VM options, and a command line argument:

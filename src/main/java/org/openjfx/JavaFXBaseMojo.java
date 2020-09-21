@@ -39,7 +39,7 @@ import org.codehaus.plexus.languages.java.jpms.ResolvePathsRequest;
 import org.codehaus.plexus.languages.java.jpms.ResolvePathsResult;
 import org.codehaus.plexus.util.StringUtils;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
-import org.openjfx.model.RuntimePath;
+import org.openjfx.model.RuntimePathOption;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -61,8 +61,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.openjfx.model.RuntimePath.CLASSPATH;
-import static org.openjfx.model.RuntimePath.MODULEPATH;
+import static org.openjfx.model.RuntimePathOption.CLASSPATH;
+import static org.openjfx.model.RuntimePathOption.MODULEPATH;
 
 abstract class JavaFXBaseMojo extends AbstractMojo {
 
@@ -95,8 +95,11 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
     @Parameter(readonly = true, required = true, defaultValue = "${project.build.directory}")
     File builddir;
 
-    @Parameter(property = "javafx.runtimePath")
-    RuntimePath runtimePath;
+    /**
+     * Type of {@link RuntimePathOption} to run the application.
+     */
+    @Parameter(property = "javafx.runtimePathOption")
+    RuntimePathOption runtimePathOption;
 
     /**
      * The current working directory. Optional. If not specified, basedir will be used.
@@ -275,7 +278,8 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
             getLog().warn(e.getMessage());
         }
 
-        if (runtimePath == MODULEPATH) {
+        if (runtimePathOption == MODULEPATH) {
+            getLog().debug(runtimePathOption + " runtimePathOption set by user. Moving all jars to modulepath.");
             if (moduleDescriptor == null) {
                 // target/classes should still be on classpath
                 final List<String> classpathJars = classpathElements.stream()
@@ -287,7 +291,8 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
                 modulepathElements.addAll(classpathElements);
                 classpathElements.clear();
             }
-        } else if (runtimePath == CLASSPATH) {
+        } else if (runtimePathOption == CLASSPATH) {
+            getLog().debug(runtimePathOption + " runtimePathOption set by user. Moving all jars to classpath.");
             classpathElements.addAll(modulepathElements);
             modulepathElements.clear();
         }
