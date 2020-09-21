@@ -137,15 +137,15 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
         }
         if (!oldJDK) {
             if (runtimePathOption == MODULEPATH || modulepathElements != null && !modulepathElements.isEmpty()) {
-                commandArguments.add(" --module-path");
+                commandArguments.add("--module-path");
                 commandArguments.add(StringUtils.join(modulepathElements.iterator(), File.pathSeparator));
-                commandArguments.add(" --add-modules");
+                commandArguments.add("--add-modules");
                 commandArguments.add(createAddModulesString(moduleDescriptor, pathElements));
             }
         }
 
         if (classpathElements != null && !classpathElements.isEmpty()) {
-            commandArguments.add(" -classpath");
+            commandArguments.add("-classpath");
             String classpath = "";
             if (oldJDK || runtimePathOption == CLASSPATH) {
                 classpath = project.getBuild().getOutputDirectory() + File.pathSeparator;
