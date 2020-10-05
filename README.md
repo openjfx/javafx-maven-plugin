@@ -129,10 +129,9 @@ Optionally, the configuration can be modified with:
 - `includePathExceptionsInClasspath`: When resolving the module-path, setting this value to true will include the 
 dependencies that generate path exceptions in the classpath. By default, the value is false, and these dependencies 
 won't be included.
-- `jlinkOptions`: A list of options passed to the jlink executable.
 - `runtimePathOption`: Allows to run the application by adding all the dependencies on either classpath or modulepath.
-If set as CLASSPATH, a [Launcher class](https://github.com/openjfx/samples/blob/master/CommandLine/Non-modular/CLI/hellofx/src/hellofx/Launcher.java)
-is required to run a JavaFX application. Also, if a module-info.java is present, it will be ignored.
+If set as CLASSPATH, a Launcher class ([like this one](https://github.com/openjfx/samples/blob/master/CommandLine/Non-modular/CLI/hellofx/src/hellofx/Launcher.java))
+is required to run a JavaFX application. Also, if a module-info descriptor is present, it will be ignored.
 Values: MODULEPATH or CLASSPATH.
 
 For instance, the following configuration adds some VM options, and a command line argument:
@@ -189,6 +188,7 @@ The same command line options for `jlink` can be set:
 - `bindServices`: Adds the option to bind services. Values: false (default) or true
 - `ignoreSigningInformation`: Adds the option to ignore signing information. Values: false (default) or true
 - `jlinkVerbose`: Adds the verbose option. Values: false (default) or true
+- `jlinkOptions`: A list of options passed to the jlink executable.
 - `launcher`: Adds a launcher script with the given name. 
     - If `options` are defined, these will be passed to the launcher script as vm options. 
     - If `commandLineArgs` are defined, these will be passed to the launcher script as command line arguments.
