@@ -188,7 +188,6 @@ The same command line options for `jlink` can be set:
 - `bindServices`: Adds the option to bind services. Values: false (default) or true
 - `ignoreSigningInformation`: Adds the option to ignore signing information. Values: false (default) or true
 - `jlinkVerbose`: Adds the verbose option. Values: false (default) or true
-- `jlinkOptions`: A list of options passed to the jlink executable.
 - `launcher`: Adds a launcher script with the given name. 
     - If `options` are defined, these will be passed to the launcher script as vm options. 
     - If `commandLineArgs` are defined, these will be passed to the launcher script as command line arguments.
