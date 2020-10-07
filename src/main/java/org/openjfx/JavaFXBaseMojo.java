@@ -303,7 +303,7 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
             getLog().debug(runtimePathOption + " runtimePathOption set by user. Moving all jars to classpath.");
             classpathElements.addAll(modulepathElements);
             modulepathElements.clear();
-            if (doesExtendFXApplication(mainClass)) {
+            if (doesExtendFXApplication(createMainClassString(mainClass, moduleDescriptor, runtimePathOption))) {
                 throw new MojoExecutionException("Launcher class is required. Main-class cannot extend Application when running JavaFX application on CLASSPATH");
             }
         }
@@ -444,6 +444,21 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
             return null;
         }
         return path.getRoot().resolve(path.subpath(0, path.getNameCount() - depth));
+    }
+
+    String createMainClassString(String mainClass, JavaModuleDescriptor moduleDescriptor, RuntimePathOption runtimePathOption) {
+        if (runtimePathOption == CLASSPATH) {
+            if (mainClass.contains("/")) {
+                getLog().warn("Main module found in <mainClass> with runtimePathOption set as CLASSPATH. Module name will be ignored.");
+                return mainClass.substring(mainClass.indexOf("/") + 1);
+            }
+            return mainClass;
+        }
+        if (moduleDescriptor != null && !mainClass.contains("/")) {
+            getLog().warn("Main module name not found in <mainClass>. Module name will be assumed from module-info.java");
+            return moduleDescriptor.name() + "/" + mainClass;
+        }
+        return mainClass;
     }
 
     private static String findExecutable(final String executable, final List<String> paths) {

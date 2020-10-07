@@ -20,11 +20,7 @@ import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.Executor;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugins.annotations.Execute;
-import org.apache.maven.plugins.annotations.LifecyclePhase;
-import org.apache.maven.plugins.annotations.Mojo;
-import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.apache.maven.plugins.annotations.*;
 import org.codehaus.plexus.languages.java.jpms.JavaModuleDescriptor;
 import org.codehaus.plexus.util.IOUtil;
 import org.codehaus.plexus.util.StringUtils;
@@ -33,11 +29,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -159,7 +151,7 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
             if (moduleDescriptor != null) {
                 commandArguments.add("--module");
             }
-            commandArguments.add(createMainClassString(mainClass, moduleDescriptor));
+            commandArguments.add(createMainClassString(mainClass, moduleDescriptor, runtimePathOption));
         }
 
         if (commandlineArgs != null) {
@@ -178,14 +170,6 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
                     .collect(Collectors.joining(","));
         }
         return moduleDescriptor.name();
-    }
-
-    private String createMainClassString(String mainClass, JavaModuleDescriptor moduleDescriptor) {
-        if (moduleDescriptor != null && !mainClass.contains("/")) {
-            getLog().warn("Main module name not found in <mainClass>. Module name will be assumed from module-info.java");
-            return moduleDescriptor.name() + "/" + mainClass;
-        }
-        return mainClass;
     }
 
     private List<String> splitComplexArgumentString(String argumentString) {
