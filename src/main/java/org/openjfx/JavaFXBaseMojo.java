@@ -25,6 +25,7 @@ import org.apache.commons.exec.ProcessDestroyer;
 import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.exec.ShutdownHookProcessDestroyer;
 import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
@@ -46,6 +47,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -66,6 +70,7 @@ import static org.openjfx.model.RuntimePathOption.MODULEPATH;
 
 abstract class JavaFXBaseMojo extends AbstractMojo {
 
+    private static final String JAVAFX_APPLICATION_CLASS_NAME = "javafx.application.Application";
     static final String JAVAFX_PREFIX = "javafx";
 
     @Parameter(defaultValue = "${project}", readonly = true)
@@ -299,6 +304,9 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
             getLog().debug(runtimePathOption + " runtimePathOption set by user. Moving all jars to classpath.");
             classpathElements.addAll(modulepathElements);
             modulepathElements.clear();
+            if (doesExtendFXApplication(mainClass)) {
+                throw new MojoExecutionException("Launcher class is required. Main-class cannot extend Application when running JavaFX application on CLASSPATH");
+            }
         }
 
         getLog().debug("Classpath:" + classpathElements.size());
@@ -584,5 +592,33 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
             processDestroyer = new ShutdownHookProcessDestroyer();
         }
         return processDestroyer;
+    }
+
+    private boolean doesExtendFXApplication(String mainClass) {
+        boolean fxApplication = false;
+        try {
+            List<URL> pathUrls = new ArrayList<>();
+            for (String path : project.getCompileClasspathElements()) {
+                pathUrls.add(new File(path).toURI().toURL());
+            }
+            URL[] urls = pathUrls.toArray(new URL[0]);
+            URLClassLoader classLoader = new URLClassLoader(urls, JavaFXBaseMojo.class.getClassLoader());
+            Class<?> clazz = Class.forName(mainClass, false, classLoader);
+            fxApplication = doesExtendFXApplication(clazz);
+            getLog().info("app for " + clazz.toString() + " extends Application: " + fxApplication);
+        } catch (NoClassDefFoundError | ClassNotFoundException | DependencyResolutionRequiredException | MalformedURLException e) {
+            getLog().debug(e);
+        }
+        return fxApplication;
+    }
+
+    private static boolean doesExtendFXApplication(Class<?> mainClass) {
+        for (Class<?> sc = mainClass.getSuperclass(); sc != null;
+             sc = sc.getSuperclass()) {
+            if (sc.getName().equals(JAVAFX_APPLICATION_CLASS_NAME)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
