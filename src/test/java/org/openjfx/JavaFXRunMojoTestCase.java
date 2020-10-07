@@ -27,7 +27,10 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
-import org.apache.maven.project.*;
+import org.apache.maven.project.MavenProject;
+import org.apache.maven.project.ProjectBuilder;
+import org.apache.maven.project.ProjectBuildingRequest;
+import org.apache.maven.project.ProjectBuildingResult;
 import org.apache.maven.repository.RepositorySystem;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.codehaus.plexus.logging.Logger;
@@ -102,19 +105,39 @@ public class JavaFXRunMojoTestCase extends AbstractMojoTestCase {
     }
 
     public void testSimpleRun() throws Exception {
-        JavaFXRunMojo mojo = getJavaFXRunMojo("target/test-classes/unit/javafxrun-basic-test");
+        final File testPom = getTestFile("src/test/resources/unit/javafxrun-basic-test/pom.xml");
+        JavaFXRunMojo mojo = getJavaFXRunMojo(testPom);
         String output = execute(mojo);
         assertEquals("JavaFXRun0", output.trim());
     }
 
     public void testApplicationRun() throws Exception {
-        JavaFXRunMojo mojo = getJavaFXRunMojo("target/test-classes/unit/javafxrun-app-test");
+        final File testPom = getTestFile("src/test/resources/unit/javafxrun-app-test/pom.xml");
+        JavaFXRunMojo mojo = getJavaFXRunMojo(testPom);
         String output = execute(mojo);
         assertEquals("JavaFXRun1", output.trim());
     }
 
-    protected JavaFXRunMojo getJavaFXRunMojo(String parent) throws Exception {
-        File testPom = new File(getBasedir(), parent + "/pom.xml");
+    public void testClasspathLauncherRun() throws Exception {
+        final File testPom = getTestFile("src/test/resources/unit/javafxrun-classpath-test/classpath-launcher.xml");
+        JavaFXRunMojo mojo = getJavaFXRunMojo(testPom);
+        String output = execute(mojo);
+        assertEquals("JavaFXRun1", output.trim());
+    }
+
+    public void testClasspathNoLauncherRun() throws Exception {
+        final File testPom = getTestFile("src/test/resources/unit/javafxrun-classpath-test/classpath-no-launcher.xml");
+        JavaFXRunMojo mojo = getJavaFXRunMojo(testPom);
+        Exception e = null;
+        try {
+            execute(mojo);
+        } catch (Exception e1) {
+            e = e1;
+        }
+        assertEquals (true, (e instanceof MojoExecutionException));
+    }
+
+    protected JavaFXRunMojo getJavaFXRunMojo(File testPom) throws Exception {
         JavaFXRunMojo mojo = (JavaFXRunMojo) lookupMojo("run", testPom);
         assertNotNull(mojo);
 
@@ -135,7 +158,7 @@ public class JavaFXRunMojoTestCase extends AbstractMojoTestCase {
         setVariableValueToObject(mojo, "compilePath", project.getCompileClasspathElements());
         setVariableValueToObject(mojo, "session", session);
         setVariableValueToObject(mojo, "executable", "java");
-        setVariableValueToObject(mojo, "basedir", new File(getBasedir(), parent));
+        setVariableValueToObject(mojo, "basedir", new File(getBasedir(), testPom.getParent()));
 
         return mojo;
     }
