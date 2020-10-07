@@ -58,37 +58,6 @@ public class JavaFXBaseMojoTest {
         Assert.assertNull(JavaFXBaseMojo.getParent(Paths.get("/some-invalid-path"), 2));
     }
 
-    @Test
-    public void testSplitComplexArgumentString() {
-        String option = "param1 " +
-                "param2   \n   " +
-                "param3\n" +
-                "param4=\"/path/to/my file.log\"   " +
-                "'var\"foo   var\"foo' " +
-                "'var\"foo'   " +
-                "'var\"foo' " +
-                "\"foo'var foo'var\" " +
-                "\"foo'var\" " +
-                "\"foo'var\"";
-
-        String expected = "START," +
-                "param1," +
-                "param2," +
-                "param3," +
-                "param4=\"/path/to/my file.log\"," +
-                "'var\"foo   var\"foo'," +
-                "'var\"foo'," +
-                "'var\"foo'," +
-                "\"foo'var foo'var\"," +
-                "\"foo'var\"," +
-                "\"foo'var\"";
-
-        String splitedOption = new JavaFXRunMojo().splitComplexArgumentStringAdapter(option)
-                .stream().reduce("START", (s1, s2) -> s1 + "," + s2);
-
-        Assert.assertEquals(expected, splitedOption);
-    }
-
     @AfterClass
     public static void destroy() throws IOException {
         Files.walk(path.getParent())

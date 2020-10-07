@@ -40,6 +40,8 @@ import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.internal.impl.SimpleLocalRepositoryManagerFactory;
 import org.eclipse.aether.repository.LocalRepository;
+import org.junit.Assert;
+import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -228,5 +230,36 @@ public class JavaFXRunMojoTestCase extends AbstractMojoTestCase {
             result += (result.length() == 0 ? "" : " ") + arg;
         }
         return result;
+    }
+
+    @Test
+    public void testSplitComplexArgumentString() {
+        String option = "param1 " +
+                "param2   \n   " +
+                "param3\n" +
+                "param4=\"/path/to/my file.log\"   " +
+                "'var\"foo   var\"foo' " +
+                "'var\"foo'   " +
+                "'var\"foo' " +
+                "\"foo'var foo'var\" " +
+                "\"foo'var\" " +
+                "\"foo'var\"";
+
+        String expected = "START," +
+                "param1," +
+                "param2," +
+                "param3," +
+                "param4=\"/path/to/my file.log\"," +
+                "'var\"foo   var\"foo'," +
+                "'var\"foo'," +
+                "'var\"foo'," +
+                "\"foo'var foo'var\"," +
+                "\"foo'var\"," +
+                "\"foo'var\"";
+
+        String splitedOption = new JavaFXRunMojo().splitComplexArgumentStringAdapter(option)
+                .stream().reduce("START", (s1, s2) -> s1 + "," + s2);
+
+        Assert.assertEquals(expected, splitedOption);
     }
 }
