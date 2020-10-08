@@ -60,6 +60,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -447,15 +448,16 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
     }
 
     String createMainClassString(String mainClass, JavaModuleDescriptor moduleDescriptor, RuntimePathOption runtimePathOption) {
+        Objects.requireNonNull(mainClass, "Main class cannot be null");
         if (runtimePathOption == CLASSPATH) {
             if (mainClass.contains("/")) {
-                getLog().warn("Main module found in <mainClass> with runtimePathOption set as CLASSPATH. Module name will be ignored.");
+                getLog().warn("Module name found in <mainClass> with runtimePathOption set as CLASSPATH. Module name will be ignored.");
                 return mainClass.substring(mainClass.indexOf("/") + 1);
             }
             return mainClass;
         }
         if (moduleDescriptor != null && !mainClass.contains("/")) {
-            getLog().warn("Main module name not found in <mainClass>. Module name will be assumed from module-info.java");
+            getLog().warn("Module name not found in <mainClass>. Module name will be assumed from module-info.java");
             return moduleDescriptor.name() + "/" + mainClass;
         }
         return mainClass;
