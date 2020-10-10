@@ -129,9 +129,8 @@ Optionally, the configuration can be modified with:
 - `includePathExceptionsInClasspath`: When resolving the module-path, setting this value to true will include the 
 dependencies that generate path exceptions in the classpath. By default, the value is false, and these dependencies 
 won't be included.
-- `runtimePathOption`: The default behaviour of the plugin is to place the dependencies either on 
-modulepath or classpath depending on various factors. For example, if a dependency contains module descriptor or Automatic-Module-Name
-it will be placed on the module-path. `runtimePathOption` configuration allows to run the application by placing all the dependencies on either classpath or modulepath.
+- `runtimePathOption`: By default, the plugin will place *each* dependency either on modulepath or on classpath (based on certain factors).
+When `runtimePathOption` configuration is set, the plugin will place *all* the dependencies on either modulepath or classpath.
 
     If set as `CLASSPATH`, a Launcher class ([like this one](https://github.com/openjfx/samples/blob/master/CommandLine/Non-modular/CLI/hellofx/src/hellofx/Launcher.java))
 is required to run a JavaFX application. Also, if a module-info descriptor is present, it will be ignored.
