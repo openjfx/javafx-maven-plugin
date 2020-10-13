@@ -289,17 +289,8 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
 
         if (runtimePathOption == MODULEPATH) {
             getLog().debug(runtimePathOption + " runtimePathOption set by user. Moving all jars to modulepath.");
-            if (moduleDescriptor == null) {
-                // target/classes should still be on classpath
-                final List<String> classpathJars = classpathElements.stream()
-                        .filter(ce -> ce.endsWith(".jar"))
-                        .collect(Collectors.toList());
-                modulepathElements.addAll(classpathJars);
-                classpathElements.removeAll(classpathJars);
-            } else {
-                modulepathElements.addAll(classpathElements);
-                classpathElements.clear();
-            }
+            modulepathElements.addAll(classpathElements);
+            classpathElements.clear();
         } else if (runtimePathOption == CLASSPATH) {
             getLog().debug(runtimePathOption + " runtimePathOption set by user. Moving all jars to classpath.");
             classpathElements.addAll(modulepathElements);
