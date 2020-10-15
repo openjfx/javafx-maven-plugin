@@ -295,6 +295,9 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
             getLog().debug(runtimePathOption + " runtimePathOption set by user. Moving all jars to classpath.");
             classpathElements.addAll(modulepathElements);
             modulepathElements.clear();
+            if (mainClass.contains("/")) {
+                getLog().warn("Module name found in <mainClass> with runtimePathOption set as CLASSPATH. Module name will be ignored.");
+            }
             if (doesExtendFXApplication(createMainClassString(mainClass, moduleDescriptor, runtimePathOption))) {
                 throw new MojoExecutionException("Launcher class is required. Main-class cannot extend Application when running JavaFX application on CLASSPATH");
             }
@@ -312,7 +315,7 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
 
     private JavaModuleDescriptor createModuleDescriptor(ResolvePathsResult<File> resolvePathsResult) throws MojoExecutionException {
         if (runtimePathOption == CLASSPATH) {
-            getLog().debug(CLASSPATH + " runtimePathOption set by user. module-info.java will be ignored.");
+            getLog().info(CLASSPATH + " runtimePathOption set by user. module-info.java will be ignored.");
             return null;
         }
         return resolvePathsResult.getMainModuleDescriptor();
@@ -442,7 +445,6 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
         Objects.requireNonNull(mainClass, "Main class cannot be null");
         if (runtimePathOption == CLASSPATH) {
             if (mainClass.contains("/")) {
-                getLog().warn("Module name found in <mainClass> with runtimePathOption set as CLASSPATH. Module name will be ignored.");
                 return mainClass.substring(mainClass.indexOf("/") + 1);
             }
             return mainClass;
@@ -576,7 +578,7 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
             URLClassLoader classLoader = new URLClassLoader(urls, JavaFXBaseMojo.class.getClassLoader());
             Class<?> clazz = Class.forName(mainClass, false, classLoader);
             fxApplication = doesExtendFXApplication(clazz);
-            getLog().info("app for " + clazz.toString() + " extends Application: " + fxApplication);
+            getLog().debug("Main Class " + clazz.toString() + " extends Application: " + fxApplication);
         } catch (NoClassDefFoundError | ClassNotFoundException | DependencyResolutionRequiredException | MalformedURLException e) {
             getLog().debug(e);
         }
