@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Gluon
+ * Copyright 2019, 2020, Gluon
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static org.openjfx.model.RuntimePathOption.CLASSPATH;
+import static org.openjfx.model.RuntimePathOption.MODULEPATH;
 
 @Mojo(name = "run", requiresDependencyResolution = ResolutionScope.RUNTIME)
 @Execute(phase = LifecyclePhase.PROCESS_CLASSES)
@@ -134,30 +137,18 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
                     .forEach(commandArguments::add);
         }
         if (!oldJDK) {
-            if (modulepathElements != null && !modulepathElements.isEmpty()) {
-                commandArguments.add(" --module-path");
-                String modulePath = StringUtils.join(modulepathElements.iterator(), File.pathSeparator);
-                commandArguments.add(modulePath);
-
-                commandArguments.add(" --add-modules");
-                if (moduleDescriptor != null) {
-                    commandArguments.add(" " + moduleDescriptor.name());
-                } else {
-                    String modules = pathElements.values().stream()
-                            .filter(Objects::nonNull)
-                            .map(JavaModuleDescriptor::name)
-                            .filter(Objects::nonNull)
-                            .filter(module -> module.startsWith(JAVAFX_PREFIX) && !module.endsWith("Empty"))
-                            .collect(Collectors.joining(","));
-                    commandArguments.add(" " + modules);
-                }
+            if (runtimePathOption == MODULEPATH || modulepathElements != null && !modulepathElements.isEmpty()) {
+                commandArguments.add("--module-path");
+                commandArguments.add(StringUtils.join(modulepathElements.iterator(), File.pathSeparator));
+                commandArguments.add("--add-modules");
+                commandArguments.add(createAddModulesString(moduleDescriptor, pathElements));
             }
         }
 
-        if (classpathElements != null && (oldJDK || !classpathElements.isEmpty())) {
-            commandArguments.add(" -classpath");
+        if (classpathElements != null && !classpathElements.isEmpty()) {
+            commandArguments.add("-classpath");
             String classpath = "";
-            if (oldJDK || moduleDescriptor != null) {
+            if (oldJDK || runtimePathOption == CLASSPATH) {
                 classpath = project.getBuild().getOutputDirectory() + File.pathSeparator;
             }
             classpath += StringUtils.join(classpathElements.iterator(), File.pathSeparator);
@@ -166,22 +157,27 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
 
         if (mainClass != null) {
             if (moduleDescriptor != null) {
-                commandArguments.add(" --module");
-                if (mainClass.contains("/")) {
-                    commandArguments.add(" " + mainClass);
-                } else {
-                    getLog().warn("Main module name not found in <mainClass>. Module name will be assumed from module-info.java");
-                    commandArguments.add(" " + moduleDescriptor.name() + "/" + mainClass);
-                }
-            } else {
-                commandArguments.add(" " + mainClass);
+                commandArguments.add("--module");
             }
+            commandArguments.add(createMainClassString(mainClass, moduleDescriptor, runtimePathOption));
         }
 
         if (commandlineArgs != null) {
             commandArguments.add(commandlineArgs);
         }
         return commandArguments;
+    }
+
+    private String createAddModulesString(JavaModuleDescriptor moduleDescriptor, Map<String, JavaModuleDescriptor> pathElements) {
+        if (moduleDescriptor == null) {
+            return pathElements.values().stream()
+                    .filter(Objects::nonNull)
+                    .map(JavaModuleDescriptor::name)
+                    .filter(Objects::nonNull)
+                    .filter(module -> module.startsWith(JAVAFX_PREFIX) && !module.endsWith("Empty"))
+                    .collect(Collectors.joining(","));
+        }
+        return moduleDescriptor.name();
     }
 
     private List<String> splitComplexArgumentString(String argumentString) {

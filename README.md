@@ -127,10 +127,21 @@ Optionally, the configuration can be modified with:
 - `options`: A list of VM options passed to the executable.
 - `commandlineArgs`: Arguments separated by space for the executed program
 - `includePathExceptionsInClasspath`: When resolving the module-path, setting this value to true will include the 
-dependencies that generate path exceptions in the classpath. By default the value is false, and these dependencies 
+dependencies that generate path exceptions in the classpath. By default, the value is false, and these dependencies 
 won't be included.
+- `runtimePathOption`: By default, the plugin will place *each* dependency either on modulepath or on classpath (based on certain factors).
+When `runtimePathOption` configuration is set, the plugin will place *all* the dependencies on either modulepath or classpath.
 
-For instance, the following configuration adds some VM options and a command line argument:
+    If set as `MODULEPATH`, a module descriptor is required. All dependencies need to be either modularized or contain an Automatic-Module-Name.
+
+    If set as `CLASSPATH`, a Launcher class ([like this one](https://github.com/openjfx/samples/blob/master/CommandLine/Non-modular/CLI/hellofx/src/hellofx/Launcher.java))
+is required to run a JavaFX application. Also, if a module-info descriptor is present, it will be ignored.
+
+    Values: MODULEPATH or CLASSPATH.
+
+### Example
+
+The following configuration adds some VM options, and a command line argument:
 
 ```
 <plugin>
