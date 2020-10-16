@@ -163,7 +163,8 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
         }
 
         if (commandlineArgs != null) {
-            commandArguments.add(commandlineArgs);
+            splitComplexArgumentString(commandlineArgs)
+                    .forEach(commandArguments::add);
         }
         return commandArguments;
     }
@@ -230,7 +231,7 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
         this.commandlineArgs = commandlineArgs;
     }
 
-    List<String> splitComplexArgumentStringAdapter(String vmOptions) {
-        return splitComplexArgumentString(vmOptions);
+    List<String> splitComplexArgumentStringAdapter(String cliOptions) {
+        return splitComplexArgumentString(cliOptions);
     }
 }
