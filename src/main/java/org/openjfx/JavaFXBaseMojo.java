@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Gluon
+ * Copyright 2019, 2020, Gluon
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import org.apache.commons.exec.ProcessDestroyer;
 import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.exec.ShutdownHookProcessDestroyer;
 import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
@@ -39,12 +40,16 @@ import org.codehaus.plexus.languages.java.jpms.ResolvePathsRequest;
 import org.codehaus.plexus.languages.java.jpms.ResolvePathsResult;
 import org.codehaus.plexus.util.StringUtils;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
+import org.openjfx.model.RuntimePathOption;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -55,12 +60,17 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.openjfx.model.RuntimePathOption.CLASSPATH;
+import static org.openjfx.model.RuntimePathOption.MODULEPATH;
+
 abstract class JavaFXBaseMojo extends AbstractMojo {
 
+    private static final String JAVAFX_APPLICATION_CLASS_NAME = "javafx.application.Application";
     static final String JAVAFX_PREFIX = "javafx";
 
     @Parameter(defaultValue = "${project}", readonly = true)
@@ -89,6 +99,12 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
 
     @Parameter(readonly = true, required = true, defaultValue = "${project.build.directory}")
     File builddir;
+
+    /**
+     * Type of {@link RuntimePathOption} to run the application.
+     */
+    @Parameter(property = "javafx.runtimePathOption")
+    RuntimePathOption runtimePathOption;
 
     /**
      * The current working directory. Optional. If not specified, basedir will be used.
@@ -201,69 +217,62 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
             getLog().debug("Total dependencyArtifacts: " + dependencyArtifacts.size());
             ResolvePathsRequest<File> fileResolvePathsRequest = ResolvePathsRequest.ofFiles(dependencyArtifacts);
 
-            ResolvePathsResult<File> resolvePathsResult;
+            getLog().debug("module descriptor path: " + moduleDescriptorPath);
             if (moduleDescriptorPath != null) {
-                getLog().debug("module descriptor: " + moduleDescriptorPath);
                 fileResolvePathsRequest.setMainModuleDescriptor(moduleDescriptorPath);
             }
             if (jdkHome != null) {
                 fileResolvePathsRequest.setJdkHome(jdkHome.toFile());
             }
-            resolvePathsResult = locationManager.resolvePaths(fileResolvePathsRequest);
+            ResolvePathsResult<File> resolvePathsResult = locationManager.resolvePaths(fileResolvePathsRequest);
+            resolvePathsResult.getPathElements().forEach((key, value) -> pathElements.put(key.getPath(), value));
 
-            if (!resolvePathsResult.getPathExceptions().isEmpty() && !isMavenUsingJava8()) {
-                // for each path exception, show a warning to plugin user...
-                for (Map.Entry<File, Exception> pathException : resolvePathsResult.getPathExceptions().entrySet()) {
-                    Throwable cause = pathException.getValue();
-                    while (cause.getCause() != null) {
-                        cause = cause.getCause();
-                    }
-                    String fileName = pathException.getKey().getName();
-                    getLog().warn("Can't extract module name from " + fileName + ": " + cause.getMessage());
-                }
-                // ...if includePathExceptionsInClasspath is NOT enabled; provide configuration hint to plugin user
-                if (!includePathExceptionsInClasspath) {
-                    getLog().warn("Some dependencies encountered issues while attempting to be resolved as modules" +
-                        " and will not be included in the classpath; you can change this behavior via the " +
-                        " 'includePathExceptionsInClasspath' configuration parameter.");
-                }
+            if (runtimePathOption == MODULEPATH && moduleDescriptorPath == null) {
+                throw new MojoExecutionException("module-info.java file is required for MODULEPATH runtimePathOption");
             }
 
             if (moduleDescriptorPath != null) {
-                moduleDescriptor = resolvePathsResult.getMainModuleDescriptor();
-            }
-
-            for (Map.Entry<File, ModuleNameSource> entry : resolvePathsResult.getModulepathElements().entrySet()) {
-                if (ModuleNameSource.FILENAME.equals(entry.getValue())) {
-                    final String message = "Required filename-based automodules detected. "
-                            + "Please don't publish this project to a public artifact repository!";
-
-                    if (moduleDescriptor != null && moduleDescriptor.exports().isEmpty()) {
-                        // application
-                        getLog().info(message);
-                    } else {
-                        // library
-                        getLog().warn(message);
+                if (!resolvePathsResult.getPathExceptions().isEmpty() && !isMavenUsingJava8()) {
+                    // for each path exception, show a warning to plugin user...
+                    for (Map.Entry<File, Exception> pathException : resolvePathsResult.getPathExceptions().entrySet()) {
+                        Throwable cause = pathException.getValue();
+                        while (cause.getCause() != null) {
+                            cause = cause.getCause();
+                        }
+                        String fileName = pathException.getKey().getName();
+                        getLog().warn("Can't extract module name from " + fileName + ": " + cause.getMessage());
                     }
-                    break;
+                    // ...if includePathExceptionsInClasspath is NOT enabled; provide configuration hint to plugin user
+                    if (!includePathExceptionsInClasspath) {
+                        getLog().warn("Some dependencies encountered issues while attempting to be resolved as modules" +
+                                " and will not be included in the classpath; you can change this behavior via the " +
+                                " 'includePathExceptionsInClasspath' configuration parameter.");
+                    }
                 }
-            }
+                moduleDescriptor = createModuleDescriptor(resolvePathsResult);
+                for (Map.Entry<File, ModuleNameSource> entry : resolvePathsResult.getModulepathElements().entrySet()) {
+                    if (ModuleNameSource.FILENAME.equals(entry.getValue())) {
+                        final String message = "Required filename-based automodules detected. "
+                                + "Please don't publish this project to a public artifact repository!";
 
-            getLog().debug("pathElements: " + resolvePathsResult.getPathElements().size());
-            resolvePathsResult.getPathElements().forEach((key, value) -> pathElements.put(key.getPath(), value));
-            getLog().debug("classpathElements: " + resolvePathsResult.getClasspathElements().size());
-            resolvePathsResult.getClasspathElements()
-                    .forEach(file -> classpathElements.add(file.getPath()));
-            getLog().debug("modulepathElements: " + resolvePathsResult.getModulepathElements().size());
-            resolvePathsResult.getModulepathElements().keySet()
-                    .forEach(file -> modulepathElements.add(file.getPath()));
+                        if (moduleDescriptor != null && moduleDescriptor.exports().isEmpty()) {
+                            // application
+                            getLog().info(message);
+                        } else {
+                            // library
+                            getLog().warn(message);
+                        }
+                        break;
+                    }
+                }
+                resolvePathsResult.getClasspathElements().forEach(file -> classpathElements.add(file.getPath()));
+                resolvePathsResult.getModulepathElements().keySet().forEach(file -> modulepathElements.add(file.getPath()));
 
-            if (includePathExceptionsInClasspath) {
-                resolvePathsResult.getPathExceptions().keySet()
-                    .forEach(file -> classpathElements.add(file.getPath()));
-            }
-
-            if (moduleDescriptorPath == null) {
+                if (includePathExceptionsInClasspath) {
+                    resolvePathsResult.getPathExceptions().keySet()
+                            .forEach(file -> classpathElements.add(file.getPath()));
+                }
+            } else {
                 // non-modular projects
                 pathElements.forEach((k, v) -> {
                     if (v != null && v.name() != null && v.name().startsWith(JAVAFX_PREFIX)) {
@@ -274,9 +283,24 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
                     }
                 });
             }
-
         } catch (Exception e) {
             getLog().warn(e.getMessage());
+        }
+
+        if (runtimePathOption == MODULEPATH) {
+            getLog().debug(runtimePathOption + " runtimePathOption set by user. Moving all jars to modulepath.");
+            modulepathElements.addAll(classpathElements);
+            classpathElements.clear();
+        } else if (runtimePathOption == CLASSPATH) {
+            getLog().debug(runtimePathOption + " runtimePathOption set by user. Moving all jars to classpath.");
+            classpathElements.addAll(modulepathElements);
+            modulepathElements.clear();
+            if (mainClass.contains("/")) {
+                getLog().warn("Module name found in <mainClass> with runtimePathOption set as CLASSPATH. Module name will be ignored.");
+            }
+            if (doesExtendFXApplication(createMainClassString(mainClass, moduleDescriptor, runtimePathOption))) {
+                throw new MojoExecutionException("Launcher class is required. Main-class cannot extend Application when running JavaFX application on CLASSPATH");
+            }
         }
 
         getLog().debug("Classpath:" + classpathElements.size());
@@ -287,6 +311,14 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
 
         getLog().debug("pathElements: " + pathElements.size());
         pathElements.forEach((k, v) -> getLog().debug(" " + k + " :: " + (v != null && v.name() != null ? v.name() : v)));
+    }
+
+    private JavaModuleDescriptor createModuleDescriptor(ResolvePathsResult<File> resolvePathsResult) throws MojoExecutionException {
+        if (runtimePathOption == CLASSPATH) {
+            getLog().info(CLASSPATH + " runtimePathOption set by user. module-info.java will be ignored.");
+            return null;
+        }
+        return resolvePathsResult.getMainModuleDescriptor();
     }
 
     private List<File> getCompileClasspathElements(MavenProject project) {
@@ -409,6 +441,21 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
         return path.getRoot().resolve(path.subpath(0, path.getNameCount() - depth));
     }
 
+    String createMainClassString(String mainClass, JavaModuleDescriptor moduleDescriptor, RuntimePathOption runtimePathOption) {
+        Objects.requireNonNull(mainClass, "Main class cannot be null");
+        if (runtimePathOption == CLASSPATH) {
+            if (mainClass.contains("/")) {
+                return mainClass.substring(mainClass.indexOf("/") + 1);
+            }
+            return mainClass;
+        }
+        if (moduleDescriptor != null && !mainClass.contains("/")) {
+            getLog().warn("Module name not found in <mainClass>. Module name will be assumed from module-info.java");
+            return moduleDescriptor.name() + "/" + mainClass;
+        }
+        return mainClass;
+    }
+
     private static String findExecutable(final String executable, final List<String> paths) {
         File f = null;
         search: for (final String path : paths) {
@@ -464,7 +511,15 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
     }
 
     private String getJavaHomeEnv(Map<String, String> enviro) {
-        return enviro.get("JAVA_HOME");
+        String javahome = enviro.get("JAVA_HOME");
+        if (javahome == null || javahome.isEmpty()) {
+            return null;
+        }
+
+        int pathStartIndex = javahome.charAt(0) == '"' ? 1 : 0;
+        int pathEndIndex = javahome.charAt(javahome.length() - 1) == '"' ? javahome.length() - 1 : javahome.length();
+
+        return javahome.substring(pathStartIndex, pathEndIndex);
     }
 
     private int executeCommandLine(Executor exec, final CommandLine commandLine, Map<String, String> enviro,
@@ -510,5 +565,33 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
             processDestroyer = new ShutdownHookProcessDestroyer();
         }
         return processDestroyer;
+    }
+
+    private boolean doesExtendFXApplication(String mainClass) {
+        boolean fxApplication = false;
+        try {
+            List<URL> pathUrls = new ArrayList<>();
+            for (String path : project.getCompileClasspathElements()) {
+                pathUrls.add(new File(path).toURI().toURL());
+            }
+            URL[] urls = pathUrls.toArray(new URL[0]);
+            URLClassLoader classLoader = new URLClassLoader(urls, JavaFXBaseMojo.class.getClassLoader());
+            Class<?> clazz = Class.forName(mainClass, false, classLoader);
+            fxApplication = doesExtendFXApplication(clazz);
+            getLog().debug("Main Class " + clazz.toString() + " extends Application: " + fxApplication);
+        } catch (NoClassDefFoundError | ClassNotFoundException | DependencyResolutionRequiredException | MalformedURLException e) {
+            getLog().debug(e);
+        }
+        return fxApplication;
+    }
+
+    private static boolean doesExtendFXApplication(Class<?> mainClass) {
+        for (Class<?> sc = mainClass.getSuperclass(); sc != null;
+             sc = sc.getSuperclass()) {
+            if (sc.getName().equals(JAVAFX_APPLICATION_CLASS_NAME)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

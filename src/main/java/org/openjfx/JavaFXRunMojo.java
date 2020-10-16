@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Gluon
+ * Copyright 2019, 2020, Gluon
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,10 +34,15 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static org.openjfx.model.RuntimePathOption.CLASSPATH;
+import static org.openjfx.model.RuntimePathOption.MODULEPATH;
 
 @Mojo(name = "run", requiresDependencyResolution = ResolutionScope.RUNTIME)
 @Execute(phase = LifecyclePhase.PROCESS_CLASSES)
@@ -127,33 +132,23 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
                     .filter(Objects::nonNull)
                     .filter(String.class::isInstance)
                     .map(String.class::cast)
+                    .map(this::splitComplexArgumentString)
+                    .flatMap(Collection::stream)
                     .forEach(commandArguments::add);
         }
         if (!oldJDK) {
-            if (modulepathElements != null && !modulepathElements.isEmpty()) {
-                commandArguments.add(" --module-path");
-                String modulePath = StringUtils.join(modulepathElements.iterator(), File.pathSeparator);
-                commandArguments.add(modulePath);
-
-                commandArguments.add(" --add-modules");
-                if (moduleDescriptor != null) {
-                    commandArguments.add(" " + moduleDescriptor.name());
-                } else {
-                    String modules = pathElements.values().stream()
-                            .filter(Objects::nonNull)
-                            .map(JavaModuleDescriptor::name)
-                            .filter(Objects::nonNull)
-                            .filter(module -> module.startsWith(JAVAFX_PREFIX) && !module.endsWith("Empty"))
-                            .collect(Collectors.joining(","));
-                    commandArguments.add(" " + modules);
-                }
+            if (runtimePathOption == MODULEPATH || modulepathElements != null && !modulepathElements.isEmpty()) {
+                commandArguments.add("--module-path");
+                commandArguments.add(StringUtils.join(modulepathElements.iterator(), File.pathSeparator));
+                commandArguments.add("--add-modules");
+                commandArguments.add(createAddModulesString(moduleDescriptor, pathElements));
             }
         }
 
-        if (classpathElements != null && (oldJDK || !classpathElements.isEmpty())) {
-            commandArguments.add(" -classpath");
+        if (classpathElements != null && !classpathElements.isEmpty()) {
+            commandArguments.add("-classpath");
             String classpath = "";
-            if (oldJDK || moduleDescriptor != null) {
+            if (oldJDK || runtimePathOption == CLASSPATH) {
                 classpath = project.getBuild().getOutputDirectory() + File.pathSeparator;
             }
             classpath += StringUtils.join(classpathElements.iterator(), File.pathSeparator);
@@ -162,21 +157,64 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
 
         if (mainClass != null) {
             if (moduleDescriptor != null) {
-                commandArguments.add(" --module");
-                if (!mainClass.startsWith(moduleDescriptor.name() + "/")) {
-                    commandArguments.add(" " + moduleDescriptor.name() + "/" + mainClass);
-                } else {
-                    commandArguments.add(" " + mainClass);
-                }
-            } else {
-                commandArguments.add(" " + mainClass);
+                commandArguments.add("--module");
             }
+            commandArguments.add(createMainClassString(mainClass, moduleDescriptor, runtimePathOption));
         }
 
         if (commandlineArgs != null) {
-            commandArguments.add(commandlineArgs);
+            splitComplexArgumentString(commandlineArgs)
+                    .forEach(commandArguments::add);
         }
         return commandArguments;
+    }
+
+    private String createAddModulesString(JavaModuleDescriptor moduleDescriptor, Map<String, JavaModuleDescriptor> pathElements) {
+        if (moduleDescriptor == null) {
+            return pathElements.values().stream()
+                    .filter(Objects::nonNull)
+                    .map(JavaModuleDescriptor::name)
+                    .filter(Objects::nonNull)
+                    .filter(module -> module.startsWith(JAVAFX_PREFIX) && !module.endsWith("Empty"))
+                    .collect(Collectors.joining(","));
+        }
+        return moduleDescriptor.name();
+    }
+
+    private List<String> splitComplexArgumentString(String argumentString) {
+        char[] strArr = argumentString.trim().toCharArray();
+
+        List<String> splitedArgs = new ArrayList<>();
+        StringBuilder sb = new StringBuilder();
+
+        char expectedSeparator = ' ';
+        for (int i = 0; i < strArr.length; i++) {
+            char item = strArr[i];
+
+            if (item == expectedSeparator
+                    || (expectedSeparator == ' ' && Pattern.matches("\\s", String.valueOf(item))) ) {
+
+                if (expectedSeparator == '"' || expectedSeparator == '\'') {
+                    sb.append(item);
+                    expectedSeparator = ' ';
+                } else if (expectedSeparator == ' ' && sb.length() > 0) {
+                    splitedArgs.add(sb.toString());
+                    sb.delete(0, sb.length());
+                }
+            } else {
+                if (expectedSeparator == ' ' && (item == '"' || item == '\'')) {
+                    expectedSeparator = item;
+                }
+
+                sb.append(item);
+            }
+
+            if (i == strArr.length - 1 && sb.length() > 0) {
+                splitedArgs.add(sb.toString());
+            }
+        }
+
+        return splitedArgs;
     }
 
     // for tests
@@ -191,5 +229,9 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
 
     void setCommandlineArgs(String commandlineArgs) {
         this.commandlineArgs = commandlineArgs;
+    }
+
+    List<String> splitComplexArgumentStringAdapter(String cliOptions) {
+        return splitComplexArgumentString(cliOptions);
     }
 }

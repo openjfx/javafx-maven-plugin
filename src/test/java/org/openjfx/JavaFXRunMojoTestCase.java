@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Gluon
+ * Copyright 2019, 2020, Gluon
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,10 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
-import org.apache.maven.project.*;
+import org.apache.maven.project.MavenProject;
+import org.apache.maven.project.ProjectBuilder;
+import org.apache.maven.project.ProjectBuildingRequest;
+import org.apache.maven.project.ProjectBuildingResult;
 import org.apache.maven.repository.RepositorySystem;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.codehaus.plexus.logging.Logger;
@@ -37,6 +40,8 @@ import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.internal.impl.SimpleLocalRepositoryManagerFactory;
 import org.eclipse.aether.repository.LocalRepository;
+import org.junit.Assert;
+import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -102,19 +107,39 @@ public class JavaFXRunMojoTestCase extends AbstractMojoTestCase {
     }
 
     public void testSimpleRun() throws Exception {
-        JavaFXRunMojo mojo = getJavaFXRunMojo("target/test-classes/unit/javafxrun-basic-test");
+        final File testPom = getTestFile("src/test/resources/unit/javafxrun-basic-test/pom.xml");
+        JavaFXRunMojo mojo = getJavaFXRunMojo(testPom);
         String output = execute(mojo);
         assertEquals("JavaFXRun0", output.trim());
     }
 
     public void testApplicationRun() throws Exception {
-        JavaFXRunMojo mojo = getJavaFXRunMojo("target/test-classes/unit/javafxrun-app-test");
+        final File testPom = getTestFile("src/test/resources/unit/javafxrun-app-test/pom.xml");
+        JavaFXRunMojo mojo = getJavaFXRunMojo(testPom);
         String output = execute(mojo);
         assertEquals("JavaFXRun1", output.trim());
     }
 
-    protected JavaFXRunMojo getJavaFXRunMojo(String parent) throws Exception {
-        File testPom = new File(getBasedir(), parent + "/pom.xml");
+    public void testClasspathLauncherRun() throws Exception {
+        final File testPom = getTestFile("src/test/resources/unit/javafxrun-classpath-test/classpath-launcher.xml");
+        JavaFXRunMojo mojo = getJavaFXRunMojo(testPom);
+        String output = execute(mojo);
+        assertEquals("JavaFXRun1", output.trim());
+    }
+
+    public void testClasspathNoLauncherRun() throws Exception {
+        final File testPom = getTestFile("src/test/resources/unit/javafxrun-classpath-test/classpath-no-launcher.xml");
+        JavaFXRunMojo mojo = getJavaFXRunMojo(testPom);
+        Exception e = null;
+        try {
+            execute(mojo);
+        } catch (Exception e1) {
+            e = e1;
+        }
+        assertEquals (true, (e instanceof MojoExecutionException));
+    }
+
+    protected JavaFXRunMojo getJavaFXRunMojo(File testPom) throws Exception {
         JavaFXRunMojo mojo = (JavaFXRunMojo) lookupMojo("run", testPom);
         assertNotNull(mojo);
 
@@ -135,7 +160,7 @@ public class JavaFXRunMojoTestCase extends AbstractMojoTestCase {
         setVariableValueToObject(mojo, "compilePath", project.getCompileClasspathElements());
         setVariableValueToObject(mojo, "session", session);
         setVariableValueToObject(mojo, "executable", "java");
-        setVariableValueToObject(mojo, "basedir", new File(getBasedir(), parent));
+        setVariableValueToObject(mojo, "basedir", new File(getBasedir(), testPom.getParent()));
 
         return mojo;
     }
@@ -205,5 +230,36 @@ public class JavaFXRunMojoTestCase extends AbstractMojoTestCase {
             result += (result.length() == 0 ? "" : " ") + arg;
         }
         return result;
+    }
+
+    @Test
+    public void testSplitComplexArgumentString() {
+        String option = "param1 " +
+                "param2   \n   " +
+                "param3\n" +
+                "param4=\"/path/to/my file.log\"   " +
+                "'var\"foo   var\"foo' " +
+                "'var\"foo'   " +
+                "'var\"foo' " +
+                "\"foo'var foo'var\" " +
+                "\"foo'var\" " +
+                "\"foo'var\"";
+
+        String expected = "START," +
+                "param1," +
+                "param2," +
+                "param3," +
+                "param4=\"/path/to/my file.log\"," +
+                "'var\"foo   var\"foo'," +
+                "'var\"foo'," +
+                "'var\"foo'," +
+                "\"foo'var foo'var\"," +
+                "\"foo'var\"," +
+                "\"foo'var\"";
+
+        String splitedOption = new JavaFXRunMojo().splitComplexArgumentStringAdapter(option)
+                .stream().reduce("START", (s1, s2) -> s1 + "," + s2);
+
+        Assert.assertEquals(expected, splitedOption);
     }
 }

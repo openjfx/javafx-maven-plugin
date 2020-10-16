@@ -39,7 +39,7 @@ Add the plugin:
 <plugin>
     <groupId>org.openjfx</groupId>
     <artifactId>javafx-maven-plugin</artifactId>
-    <version>0.0.4</version>
+    <version>0.0.5</version>
     <configuration>
         <mainClass>hellofx/org.openjfx.App</mainClass>
     </configuration>
@@ -83,14 +83,25 @@ Optionally, the configuration can be modified with:
 - `includePathExceptionsInClasspath`: When resolving the module-path, setting this value to true will include the 
 dependencies that generate path exceptions in the classpath. By default, the value is false, and these dependencies 
 won't be included.
+- `runtimePathOption`: By default, the plugin will place *each* dependency either on modulepath or on classpath (based on certain factors).
+When `runtimePathOption` configuration is set, the plugin will place *all* the dependencies on either modulepath or classpath.
 
-For instance, the following configuration adds some VM options and a command line argument:
+    If set as `MODULEPATH`, a module descriptor is required. All dependencies need to be either modularized or contain an Automatic-Module-Name.
+
+    If set as `CLASSPATH`, a Launcher class ([like this one](https://github.com/openjfx/samples/blob/master/CommandLine/Non-modular/CLI/hellofx/src/hellofx/Launcher.java))
+is required to run a JavaFX application. Also, if a module-info descriptor is present, it will be ignored.
+
+    Values: MODULEPATH or CLASSPATH.
+
+### Example
+
+The following configuration adds some VM options, and a command line argument:
 
 ```
 <plugin>
     <groupId>org.openjfx</groupId>
     <artifactId>javafx-maven-plugin</artifactId>
-    <version>0.0.4</version>
+    <version>0.0.5</version>
     <configuration>
         <mainClass>org.openjfx.hellofx/org.openjfx.App</mainClass>
         <options>
@@ -104,8 +115,10 @@ For instance, the following configuration adds some VM options and a command lin
 
 **Note**
 
-It is possible to use a local SDK instead of Maven Central. This is helpful for developers trying to test a local build of OpenJFX. 
-Since transitive dependencies are not resolved, all the required jars needs to be added as a separate dependency, like:
+It is possible to use a local SDK instead of Maven Central. 
+This is helpful for developers trying to test a local build of OpenJFX. 
+Since transitive dependencies are not resolved, 
+all the required jars needs to be added as a separate dependency, like:
 
 ```
 <properties>
@@ -129,6 +142,7 @@ Since transitive dependencies are not resolved, all the required jars needs to b
 The same command line options for `jlink` can be set:
 
 - `stripDebug`: Strips debug information out. Values: false (default) or true
+- `stripJavaDebugAttributes`: Strip Java debug attributes out (since Java 13), Values: false (default) or true
 - `compress`: Compression level of the resources being used. Values: 0 (default), 1, 2. 
 - `noHeaderFiles`: Removes the `includes` directory in the resulting runtime image. Values: false (default) or true
 - `noManPages`: Removes the `man` directory in the resulting runtime image. Values: false (default) or true
@@ -149,7 +163,7 @@ For instance, with the following configuration:
 <plugin>
     <groupId>org.openjfx</groupId>
     <artifactId>javafx-maven-plugin</artifactId>
-    <version>0.0.4</version>
+    <version>0.0.5</version>
     <configuration>
         <stripDebug>true</stripDebug>
         <compress>2</compress>

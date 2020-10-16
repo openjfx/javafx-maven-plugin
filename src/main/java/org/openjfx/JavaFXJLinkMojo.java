@@ -20,6 +20,7 @@ import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.Executor;
+import org.apache.commons.exec.OS;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
@@ -34,6 +35,7 @@ import org.codehaus.plexus.archiver.zip.ZipArchiver;
 import org.codehaus.plexus.util.IOUtil;
 import org.codehaus.plexus.util.StringUtils;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -45,11 +47,14 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Mojo(name = "jlink", requiresDependencyResolution = ResolutionScope.RUNTIME)
 @Execute(phase = LifecyclePhase.PROCESS_CLASSES)
 public class JavaFXJLinkMojo extends JavaFXBaseMojo {
+
+    private static final Pattern JLINK_VERSION_PATTERN = Pattern.compile("(1[3-9]|[2-9][0-9]|\\d{3,})");
 
     /**
      * Strips debug information out, equivalent to <code>-G, --strip-debug</code>,
@@ -59,11 +64,18 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
     private boolean stripDebug;
 
     /**
+     * Strip Java debug attributes out, equivalent to <code>--strip-java-debug-attributes</code>,
+     * default false
+     */
+    @Parameter(property = "javafx.stripJavaDebugAttributes", defaultValue = "false")
+    private boolean stripJavaDebugAttributes;
+
+    /**
      * Compression level of the resources being used, equivalent to:
      * <code>-c, --compress=level</code>. Valid values: <code>0, 1, 2</code>,
-     * default 2
+     * default 0
      */
-    @Parameter(property = "javafx.compress", defaultValue = "2")
+    @Parameter(property = "javafx.compress", defaultValue = "0")
     private Integer compress;
 
     /**
@@ -153,6 +165,8 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
             throw new IllegalStateException( "basedir is null. Should not be possible." );
         }
 
+        handleWorkingDirectory();
+        
         Map<String, String> enviro = handleSystemEnvVariables();
         CommandLine commandLine = getExecutablePath(jlinkExecutable, enviro, workingDirectory);
 
@@ -161,8 +175,13 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
             return;
         }
 
+        if (stripJavaDebugAttributes && !isJLinkVersion13orHigher(commandLine.getExecutable())) {
+            stripJavaDebugAttributes = false;
+            getLog().warn("JLink parameter --strip-java-debug-attributes only supported for version 13 and higher");
+            getLog().warn("The option 'stripJavaDebugAttributes' was skipped");
+        }
+
         try {
-            handleWorkingDirectory();
 
             List<String> commandArguments = createCommandArguments();
             String[] args = commandArguments.toArray(new String[commandArguments.size()]);
@@ -197,36 +216,10 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
                 }
 
                 if (launcher != null && ! launcher.isEmpty()) {
-                    Path launcherPath = Paths.get(builddir.getAbsolutePath(), jlinkImageName, "bin", launcher);
-                    if (options != null) {
-                        String optionsString = options.stream()
-                            .filter(Objects::nonNull)
-                            .filter(String.class::isInstance)
-                            .map(String.class::cast)
-                            .collect(Collectors.joining(" "));
+                    patchLauncherScript(launcher);
 
-                        // Add vm options to launcher script
-                        List<String> lines = Files.lines(launcherPath)
-                                .map(line -> {
-                                    if ("JLINK_VM_OPTIONS=".equals(line)) {
-                                        return "JLINK_VM_OPTIONS=\"" + optionsString + "\"";
-                                    }
-                                    return line;
-                                })
-                                .collect(Collectors.toList());
-                        Files.write(launcherPath, lines);
-                    }
-                    if (commandlineArgs != null) {
-                        // Add options to launcher script
-                        List<String> lines = Files.lines(launcherPath)
-                                .map(line -> {
-                                    if (line.endsWith("$@")) {
-                                        return line.replace("$@", commandlineArgs + " $@");
-                                    }
-                                    return line;
-                                })
-                                .collect(Collectors.toList());
-                        Files.write(launcherPath, lines);
+                    if (OS.isFamilyWindows()) {
+                        patchLauncherScript(launcher + ".bat");
                     }
                 }
 
@@ -246,6 +239,51 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
             }
         } catch (Exception e) {
             throw new MojoExecutionException("Error", e);
+        }
+    }
+
+    private void patchLauncherScript(String launcherFilename) throws IOException {
+        Path launcherPath = Paths.get(builddir.getAbsolutePath(), jlinkImageName, "bin", launcherFilename);
+
+        if (!Files.exists(launcherPath)) {
+            getLog().debug("Launcher file not exist: " + launcherPath);
+            return;
+        }
+
+        if (options != null) {
+            String optionsString = options.stream()
+                    .filter(Objects::nonNull)
+                    .filter(String.class::isInstance)
+                    .map(String.class::cast)
+                    .collect(Collectors.joining(" "));
+
+            // Add vm options to launcher script
+            List<String> lines = Files.lines(launcherPath)
+                    .map(line -> {
+                        boolean unixOptionsLine = "JLINK_VM_OPTIONS=".equals(line);
+                        boolean winOptionsLine = "set JLINK_VM_OPTIONS=".equals(line);
+
+                        if (unixOptionsLine || winOptionsLine) {
+                            String lineWrapper = unixOptionsLine ? "\"" : "";
+                            return line + lineWrapper + optionsString + lineWrapper;
+                        }
+                        return line;
+                    })
+                    .collect(Collectors.toList());
+            Files.write(launcherPath, lines);
+        }
+
+        if (commandlineArgs != null) {
+            // Add options to launcher script
+            List<String> lines = Files.lines(launcherPath)
+                    .map(line -> {
+                        if (line.endsWith("$@")) {
+                            return line.replace("$@", commandlineArgs + " $@");
+                        }
+                        return line;
+                    })
+                    .collect(Collectors.toList());
+            Files.write(launcherPath, lines);
         }
     }
 
@@ -286,6 +324,9 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
 
         if (stripDebug) {
             commandArguments.add(" --strip-debug");
+        }
+        if (stripJavaDebugAttributes) {
+            commandArguments.add(" --strip-java-debug-attributes");
         }
         if (bindServices) {
             commandArguments.add(" --bind-services");
@@ -335,6 +376,31 @@ public class JavaFXJLinkMojo extends JavaFXBaseMojo {
             throw new MojoExecutionException(e.getMessage(), e);
         }
         return resultArchive;
+    }
+
+    private boolean isJLinkVersion13orHigher(String jlinkExePath) {
+        CommandLine versionCommandLine = new CommandLine(jlinkExePath)
+                .addArgument("--version");
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        int resultCode = -1;
+
+        try {
+            resultCode = executeCommandLine(new DefaultExecutor(), versionCommandLine, null, baos, System.err);
+        } catch (IOException e) {
+            if (getLog().isDebugEnabled()) {
+                getLog().error("Error getting JLink version", e);
+            }
+        }
+
+        if (resultCode != 0) {
+            getLog().error("Unable to get JLink version");
+            getLog().error("Result of " + versionCommandLine + " execution is: '" + resultCode + "'");
+            return false;
+        }
+
+        String versionStr = new String(baos.toByteArray());
+        return JLINK_VERSION_PATTERN.matcher(versionStr).lookingAt();
     }
 
     // for tests
