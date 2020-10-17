@@ -137,10 +137,10 @@ public class JavaFXBaseMojoTest {
                 "\"foo'var\"," +
                 "\"foo'var\"";
 
-        String splitedOption = new JavaFXRunMojo().splitComplexArgumentStringAdapter(option)
+        String splitOption = mojo.splitComplexArgumentString(option)
                 .stream().reduce("START", (s1, s2) -> s1 + "," + s2);
 
-        Assert.assertEquals(expected, splitedOption);
+        Assert.assertEquals(expected, splitOption);
     }
 
     @AfterClass
