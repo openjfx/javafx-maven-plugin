@@ -227,6 +227,21 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
             ResolvePathsResult<File> resolvePathsResult = locationManager.resolvePaths(fileResolvePathsRequest);
             resolvePathsResult.getPathElements().forEach((key, value) -> pathElements.put(key.getPath(), value));
 
+            if (!resolvePathsResult.getPathExceptions().isEmpty()) {
+                getLog().warn("There are " + resolvePathsResult.getPathExceptions().size() + " pathException(s). The related dependencies will be ignored.");
+                resolvePathsResult.getPathExceptions().forEach((key, value) -> {
+                    String message = "Dependency: " + key;
+                    if (value != null) {
+                        message += "\n   - exception: " + value.getMessage();
+                        Throwable t = value.getCause();
+                        if (t != null) {
+                            message += "\n   - cause: " + t.getMessage();
+                        }
+                    }
+                    getLog().warn(message);
+                });
+            }
+
             if (runtimePathOption == MODULEPATH && moduleDescriptorPath == null) {
                 throw new MojoExecutionException("module-info.java file is required for MODULEPATH runtimePathOption");
             }
