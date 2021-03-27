@@ -150,24 +150,6 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
     String commandlineArgs;
 
     /**
-     * <p>The -source argument for the Java compiler.</p>
-     */
-    @Parameter(property = "javafx.source", defaultValue = "11")
-    private String source;
-
-    /**
-     * <p>The -target argument for the Java compiler.</p>
-     */
-    @Parameter(property = "javafx.target", defaultValue = "11")
-    private String target;
-
-    /**
-     * The -release argument for the Java compiler
-     */
-    @Parameter(property = "javafx.release", defaultValue = "11")
-    private String release;
-
-    /**
      * If set to true, it will include the dependencies that
      * generate path exceptions in the classpath. Default is false.
      */
