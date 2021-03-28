@@ -93,6 +93,8 @@ is required to run a JavaFX application. Also, if a module-info descriptor is pr
 
     Values: MODULEPATH or CLASSPATH.
 
+This plugin supports Maven toolchains using the "jdk" tool.
+
 ### Example
 
 The following configuration adds some VM options, and a command line argument:
