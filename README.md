@@ -113,12 +113,14 @@ The following configuration adds some VM options, and a command line argument:
 </plugin>
 ```
 
-**Note**
+**Local SDK**
 
-It is possible to use a local SDK instead of Maven Central. 
+It is possible to use a local SDK instead of Maven Central artifacts. 
 This is helpful for developers trying to test a local build of OpenJFX. 
-Since transitive dependencies are not resolved, 
-all the required jars needs to be added as a separate dependency, like:
+
+One way to do it is using local dependencies. However, 
+since transitive dependencies are not resolved, 
+all the required jars need to be added as a separate dependency.
 
 ```
 <properties>
@@ -136,6 +138,30 @@ all the required jars needs to be added as a separate dependency, like:
     ...
 </dependencies>
 ```
+
+Alternatively, while keeping the regular JavaFX dependencies, 
+the path to a local JavaFX SDK can be set:
+ 
+```
+<dependencies>
+    <dependency>
+        <groupId>org.openjfx</groupId>
+        <artifactId>javafx-controls</artifactId>
+        <version>${javafx.version}</version>
+    </dependency>
+    ...
+</dependencies>
+
+<plugin>
+    <groupId>org.openjfx</groupId>
+    <artifactId>javafx-maven-plugin</artifactId>
+    <version>${javafx.plugin.version}</version>
+    <configuration>
+        <sdk>/path/to/javafx-sdk</sdk>
+...
+``` 
+ 
+and all the JavaFX dependencies (including transitive ones) will be replaced.
 
 ### javafx:jlink options
 
