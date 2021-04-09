@@ -16,31 +16,8 @@
 
 package org.openjfx;
 
-import org.apache.commons.exec.CommandLine;
-import org.apache.commons.exec.ExecuteException;
-import org.apache.commons.exec.ExecuteResultHandler;
-import org.apache.commons.exec.Executor;
-import org.apache.commons.exec.OS;
-import org.apache.commons.exec.ProcessDestroyer;
-import org.apache.commons.exec.PumpStreamHandler;
-import org.apache.commons.exec.ShutdownHookProcessDestroyer;
-import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.DependencyResolutionRequiredException;
-import org.apache.maven.execution.MavenSession;
-import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.BuildPluginManager;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugins.annotations.Component;
-import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.project.MavenProject;
-import org.codehaus.plexus.languages.java.jpms.JavaModuleDescriptor;
-import org.codehaus.plexus.languages.java.jpms.LocationManager;
-import org.codehaus.plexus.languages.java.jpms.ModuleNameSource;
-import org.codehaus.plexus.languages.java.jpms.ResolvePathsRequest;
-import org.codehaus.plexus.languages.java.jpms.ResolvePathsResult;
-import org.codehaus.plexus.util.StringUtils;
-import org.codehaus.plexus.util.cli.CommandLineUtils;
-import org.openjfx.model.RuntimePathOption;
+import static org.openjfx.model.RuntimePathOption.CLASSPATH;
+import static org.openjfx.model.RuntimePathOption.MODULEPATH;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -65,8 +42,33 @@ import java.util.Properties;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.openjfx.model.RuntimePathOption.CLASSPATH;
-import static org.openjfx.model.RuntimePathOption.MODULEPATH;
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.ExecuteException;
+import org.apache.commons.exec.ExecuteResultHandler;
+import org.apache.commons.exec.Executor;
+import org.apache.commons.exec.OS;
+import org.apache.commons.exec.ProcessDestroyer;
+import org.apache.commons.exec.PumpStreamHandler;
+import org.apache.commons.exec.ShutdownHookProcessDestroyer;
+import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.DependencyResolutionRequiredException;
+import org.apache.maven.execution.MavenSession;
+import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.BuildPluginManager;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Component;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.MavenProject;
+import org.apache.maven.toolchain.Toolchain;
+import org.apache.maven.toolchain.ToolchainManager;
+import org.codehaus.plexus.languages.java.jpms.JavaModuleDescriptor;
+import org.codehaus.plexus.languages.java.jpms.LocationManager;
+import org.codehaus.plexus.languages.java.jpms.ModuleNameSource;
+import org.codehaus.plexus.languages.java.jpms.ResolvePathsRequest;
+import org.codehaus.plexus.languages.java.jpms.ResolvePathsResult;
+import org.codehaus.plexus.util.StringUtils;
+import org.codehaus.plexus.util.cli.CommandLineUtils;
+import org.openjfx.model.RuntimePathOption;
 
 abstract class JavaFXBaseMojo extends AbstractMojo {
 
@@ -148,30 +150,18 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
     String commandlineArgs;
 
     /**
-     * <p>The -source argument for the Java compiler.</p>
-     */
-    @Parameter(property = "javafx.source", defaultValue = "11")
-    private String source;
-
-    /**
-     * <p>The -target argument for the Java compiler.</p>
-     */
-    @Parameter(property = "javafx.target", defaultValue = "11")
-    private String target;
-
-    /**
-     * The -release argument for the Java compiler
-     */
-    @Parameter(property = "javafx.release", defaultValue = "11")
-    private String release;
-
-    /**
      * If set to true, it will include the dependencies that
      * generate path exceptions in the classpath. Default is false.
      */
     @Parameter(property = "javafx.includePathExceptionsInClasspath", defaultValue = "false")
     private boolean includePathExceptionsInClasspath;
 
+    /**
+    *
+    */
+    @Component
+    private ToolchainManager toolchainManager;
+   
     List<String> classpathElements;
     List<String> modulepathElements;
     Map<String, JavaModuleDescriptor> pathElements;
@@ -393,8 +383,17 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
         File execFile = new File(executable);
         String exec = null;
         if (execFile.isFile()) {
-            getLog().debug("Toolchains are ignored, 'executable' parameter is set to " + executable);
+            getLog().debug("'executable' parameter is set to " + executable);
             exec = execFile.getAbsolutePath();
+        }
+
+        if (exec == null && toolchainManager != null) {
+        	Toolchain toolchain = toolchainManager.getToolchainFromBuildContext("jdk", session);
+            getLog().info("Toolchain in javafx-maven-plugin " + toolchain);
+            if (toolchain != null) {
+                exec = toolchain.findTool("java");
+                getLog().debug("Tool in toolchain in javafx-maven-plugin " + exec);
+            }
         }
 
         if (exec == null) {
