@@ -145,7 +145,7 @@ public class JavaFXRunMojo extends JavaFXBaseMojo {
             }
         }
 
-        if (classpathElements != null && !classpathElements.isEmpty()) {
+        if (classpathElements != null && (oldJDK || !classpathElements.isEmpty())) {
             commandArguments.add("-classpath");
             String classpath = "";
             if (oldJDK || runtimePathOption == CLASSPATH) {
