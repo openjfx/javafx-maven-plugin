@@ -43,3 +43,6 @@ bash .ci/update-archetypes.sh "$TRAVIS_TAG"
 
 # Update openjfx-docs
 bash .ci/update-openjfx-docs.sh "$TRAVIS_TAG"
+
+# Update gluon-samples
+bash .ci/update-gluon-samples.sh "$TRAVIS_TAG"
