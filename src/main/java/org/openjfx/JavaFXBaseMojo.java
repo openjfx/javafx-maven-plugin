@@ -389,8 +389,8 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
 
         if (exec == null && toolchainManager != null) {
         	Toolchain toolchain = toolchainManager.getToolchainFromBuildContext("jdk", session);
-            getLog().info("Toolchain in javafx-maven-plugin " + toolchain);
             if (toolchain != null) {
+                getLog().info("Toolchain in javafx-maven-plugin " + toolchain);
                 exec = toolchain.findTool("java");
                 getLog().debug("Tool in toolchain in javafx-maven-plugin " + exec);
             }
