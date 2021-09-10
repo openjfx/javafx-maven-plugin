@@ -41,6 +41,7 @@ import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.internal.impl.SimpleLocalRepositoryManagerFactory;
 import org.eclipse.aether.repository.LocalRepository;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -55,6 +56,7 @@ import java.util.stream.Collectors;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@Ignore
 public class JavaFXRunMojoTestCase extends AbstractMojoTestCase {
 
     private static final File LOCAL_REPO = new File( "src/test/repository" );
