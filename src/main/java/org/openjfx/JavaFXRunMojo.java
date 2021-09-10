@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
 import static org.openjfx.model.RuntimePathOption.CLASSPATH;
 import static org.openjfx.model.RuntimePathOption.MODULEPATH;
 
-@Mojo(name = "run", requiresDependencyResolution = ResolutionScope.RUNTIME)
+@Mojo(name = "runx", requiresDependencyResolution = ResolutionScope.RUNTIME)
 @Execute(phase = LifecyclePhase.PROCESS_CLASSES)
 public class JavaFXRunMojo extends JavaFXBaseMojo {
 
