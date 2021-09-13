@@ -57,7 +57,7 @@ import java.util.stream.Collectors;
 
 @Mojo(name = "run", requiresDependencyResolution = ResolutionScope.COMPILE)
 @Execute(phase = LifecyclePhase.PROCESS_RESOURCES)
-public class JavaFXRunMojoFix extends JavaFXBaseMojo {
+public class JavaFXRunFixMojo extends JavaFXBaseMojo {
 
     @Parameter(readonly = true, required = true, defaultValue = "${basedir}/pom.xml")
     String pom;
