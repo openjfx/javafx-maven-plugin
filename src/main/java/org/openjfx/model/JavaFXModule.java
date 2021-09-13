@@ -76,7 +76,7 @@ public enum JavaFXModule {
         return dependentModules;
     }
 
-    public List<JavaFXDependency> getMavenDependencies(String platform, String version) {
+    public List<JavaFXDependency> getTransitiveMavenDependencies(String platform, String version) {
         List<JavaFXDependency> mavenDependencies = new ArrayList<>();
         for (JavaFXModule dependentModule : dependentModules) {
             mavenDependencies.add(dependentModule.getMavenDependency(platform, version));

@@ -27,7 +27,6 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 package org.openjfx;
 
 import org.apache.maven.execution.MavenSession;
@@ -42,8 +41,18 @@ import org.apache.maven.shared.invoker.*;
 import org.openjfx.model.JavaFXDependency;
 import org.openjfx.model.JavaFXModule;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Mojo(name = "run", requiresDependencyResolution = ResolutionScope.COMPILE)
@@ -86,7 +95,7 @@ public class JavaFXRunMojoFix extends JavaFXBaseMojo {
 
         // 1. Create modified pom
         File modifiedPomFile = new File(modifiedPom);
-        try (InputStream is = new FileInputStream(new File(pom))) {
+        try (InputStream is = new FileInputStream(pom)) {
             // 2. Create model from current pom
             Model model = new MavenXpp3Reader().read(is);
 
@@ -99,7 +108,7 @@ public class JavaFXRunMojoFix extends JavaFXBaseMojo {
                     final Optional<JavaFXModule> javaFXModule = JavaFXModule.fromArtifactName(p.getArtifactId());
                     javaFXModule.ifPresent(module -> {
                         javaFXDependencies.add(module.getMavenDependency(PLATFORM, p.getVersion()));
-                        javaFXDependencies.addAll(module.getMavenDependencies(PLATFORM, p.getVersion()));
+                        javaFXDependencies.addAll(module.getTransitiveMavenDependencies(PLATFORM, p.getVersion()));
                     });
                 }
             }
@@ -114,14 +123,13 @@ public class JavaFXRunMojoFix extends JavaFXBaseMojo {
             if (modifiedPomFile.exists()) {
                 modifiedPomFile.delete();
             }
-            throw new MojoExecutionException("Error generating agent pom", e);
+            throw new MojoExecutionException("Error generating modified pom", e);
         }
 
         invocationRequest.setPomFile(modifiedPomFile);
         invocationRequest.setGoals(Collections.singletonList("javafx:runx"));
 
         final Invoker invoker = new DefaultInvoker();
-        // 8. Execute:
         try {
             final InvocationResult invocationResult = invoker.execute(invocationRequest);
             if (invocationResult.getExitCode() != 0) {
