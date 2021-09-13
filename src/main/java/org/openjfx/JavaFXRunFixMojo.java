@@ -62,6 +62,10 @@ public class JavaFXRunFixMojo extends JavaFXBaseMojo {
     @Parameter(readonly = true, required = true, defaultValue = "${basedir}/pom.xml")
     String pom;
 
+    // gluonfx-maven-plugin creates `runPom.xml` for gluonfx:runagent goal
+    @Parameter(readonly = true, required = true, defaultValue = "${basedir}/runPom.xml")
+    String runpom;
+
     @Parameter(readonly = true, required = true, defaultValue = "${project.basedir}/modifiedPom.xml")
     String modifiedPom;
 
@@ -95,7 +99,7 @@ public class JavaFXRunFixMojo extends JavaFXBaseMojo {
 
         // 1. Create modified pom
         File modifiedPomFile = new File(modifiedPom);
-        try (InputStream is = new FileInputStream(pom)) {
+        try (InputStream is = new FileInputStream(new File(runpom).exists() ? runpom : pom)) {
             // 2. Create model from current pom
             Model model = new MavenXpp3Reader().read(is);
 
