@@ -140,7 +140,7 @@ public class JavaFXRunMojoTestCase extends AbstractMojoTestCase {
     }
 
     protected JavaFXRunMojo getJavaFXRunMojo(File testPom) throws Exception {
-        JavaFXRunMojo mojo = (JavaFXRunMojo) lookupMojo("run", testPom);
+        JavaFXRunMojo mojo = (JavaFXRunMojo) lookupMojo("dorun", testPom);
         assertNotNull(mojo);
 
         setUpProject(testPom, mojo);
