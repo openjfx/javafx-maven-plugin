@@ -135,7 +135,7 @@ public class JavaFXRunFixMojo extends JavaFXBaseMojo {
         }
 
         invocationRequest.setPomFile(modifiedPomFile);
-        invocationRequest.setGoals(Collections.singletonList("javafx:runx"));
+        invocationRequest.setGoals(Collections.singletonList("javafx:dorun"));
         invocationRequest.setUserSettingsFile(session.getRequest().getUserSettingsFile());
 
         final Invoker invoker = new DefaultInvoker();

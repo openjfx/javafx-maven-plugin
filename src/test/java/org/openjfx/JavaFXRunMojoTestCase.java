@@ -41,7 +41,6 @@ import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.internal.impl.SimpleLocalRepositoryManagerFactory;
 import org.eclipse.aether.repository.LocalRepository;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -141,7 +140,7 @@ public class JavaFXRunMojoTestCase extends AbstractMojoTestCase {
     }
 
     protected JavaFXRunMojo getJavaFXRunMojo(File testPom) throws Exception {
-        JavaFXRunMojo mojo = (JavaFXRunMojo) lookupMojo("runx", testPom);
+        JavaFXRunMojo mojo = (JavaFXRunMojo) lookupMojo("dorun", testPom);
         assertNotNull(mojo);
 
         setUpProject(testPom, mojo);
