@@ -44,6 +44,12 @@ import java.util.stream.Collectors;
 import static org.openjfx.model.RuntimePathOption.CLASSPATH;
 import static org.openjfx.model.RuntimePathOption.MODULEPATH;
 
+/**
+ * Mojo to run a JavaFX application.
+ * 
+ * Mojo name change from 'run' to 'runx' is temporary. It will be reverted
+ * once JavaFX 17.x empty jars are available with Automatic-Module-Name.
+ */
 @Mojo(name = "runx", requiresDependencyResolution = ResolutionScope.RUNTIME)
 @Execute(phase = LifecyclePhase.PROCESS_CLASSES)
 public class JavaFXRunMojo extends JavaFXBaseMojo {

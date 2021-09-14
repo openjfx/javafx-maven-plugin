@@ -56,7 +56,6 @@ import java.util.stream.Collectors;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@Ignore
 public class JavaFXRunMojoTestCase extends AbstractMojoTestCase {
 
     private static final File LOCAL_REPO = new File( "src/test/repository" );
@@ -142,7 +141,7 @@ public class JavaFXRunMojoTestCase extends AbstractMojoTestCase {
     }
 
     protected JavaFXRunMojo getJavaFXRunMojo(File testPom) throws Exception {
-        JavaFXRunMojo mojo = (JavaFXRunMojo) lookupMojo("run", testPom);
+        JavaFXRunMojo mojo = (JavaFXRunMojo) lookupMojo("runx", testPom);
         assertNotNull(mojo);
 
         setUpProject(testPom, mojo);

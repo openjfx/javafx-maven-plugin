@@ -55,6 +55,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * A temporary mojo introduced to run JavaFX applications
+ * with Java 17 Maven artifacts.
+ */
 @Mojo(name = "run", requiresDependencyResolution = ResolutionScope.COMPILE)
 @Execute(phase = LifecyclePhase.PROCESS_RESOURCES)
 public class JavaFXRunFixMojo extends JavaFXBaseMojo {
