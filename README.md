@@ -39,7 +39,7 @@ Add the plugin:
 <plugin>
     <groupId>org.openjfx</groupId>
     <artifactId>javafx-maven-plugin</artifactId>
-    <version>0.0.7</version>
+    <version>0.0.8</version>
     <configuration>
         <mainClass>hellofx/org.openjfx.App</mainClass>
     </configuration>
@@ -103,7 +103,7 @@ The following configuration adds some VM options, and a command line argument:
 <plugin>
     <groupId>org.openjfx</groupId>
     <artifactId>javafx-maven-plugin</artifactId>
-    <version>0.0.7</version>
+    <version>0.0.8</version>
     <configuration>
         <mainClass>org.openjfx.hellofx/org.openjfx.App</mainClass>
         <options>
@@ -165,7 +165,7 @@ For instance, with the following configuration:
 <plugin>
     <groupId>org.openjfx</groupId>
     <artifactId>javafx-maven-plugin</artifactId>
-    <version>0.0.7</version>
+    <version>0.0.8</version>
     <configuration>
         <stripDebug>true</stripDebug>
         <compress>2</compress>
