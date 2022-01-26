@@ -118,7 +118,7 @@ The following configuration adds some VM options, and a command line argument:
 
 When running maven with
 ```
-mvn -Dbar=myBar
+mvn -Dbar=myBar javafx:run
 ```
 it will be processed by the main method like:
 
@@ -133,6 +133,8 @@ public static void main(String[] args) {
     launch();
 }
 ```
+
+Note that the evaluation of `System.getProperty("bar")` can happen in any other place in the code.
 
 **Note**
 
