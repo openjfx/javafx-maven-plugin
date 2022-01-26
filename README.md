@@ -110,9 +110,20 @@ The following configuration adds some VM options, and a command line argument:
             <option>--add-opens</option>
             <option>java.base/java.lang=org.openjfx.hellofx</option>
         </options>
-        <commandlineArgs>-Xmx1024m</commandlineArgs>
+        <commandlineArgs>foo</commandlineArgs>
     </configuration>
 </plugin>
+```
+
+so it can be processed by the main method like:
+
+```java
+public static void main(String[] args) {
+    if (args.length > 0 && "foo".equals(args[0])) {
+        // do something
+    }
+    launch();
+}
 ```
 
 **Note**
