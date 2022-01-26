@@ -107,6 +107,7 @@ The following configuration adds some VM options, and a command line argument:
     <configuration>
         <mainClass>org.openjfx.hellofx/org.openjfx.App</mainClass>
         <options>
+            <option>-Dmode=${bar}</option>
             <option>--add-opens</option>
             <option>java.base/java.lang=org.openjfx.hellofx</option>
         </options>
@@ -115,11 +116,18 @@ The following configuration adds some VM options, and a command line argument:
 </plugin>
 ```
 
-so it can be processed by the main method like:
+When running maven with
+```
+mvn -Dbar=myBar
+```
+it will be processed by the main method like:
 
 ```java
 public static void main(String[] args) {
     if (args.length > 0 && "foo".equals(args[0])) {
+        // do something
+    }
+    if ("baz".equals(System.getProperty("bar"))) {
         // do something
     }
     launch();
