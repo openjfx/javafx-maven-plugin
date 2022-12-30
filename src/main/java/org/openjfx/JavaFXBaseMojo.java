@@ -273,10 +273,6 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
                 resolvePathsResult.getClasspathElements().forEach(file -> classpathElements.add(file.getPath()));
                 resolvePathsResult.getModulepathElements().keySet().forEach(file -> modulepathElements.add(file.getPath()));
 
-                if (includePathExceptionsInClasspath) {
-                    resolvePathsResult.getPathExceptions().keySet()
-                            .forEach(file -> classpathElements.add(file.getPath()));
-                }
             } else {
                 // non-modular projects
                 pathElements.forEach((k, v) -> {
@@ -287,6 +283,11 @@ abstract class JavaFXBaseMojo extends AbstractMojo {
                         classpathElements.add(k);
                     }
                 });
+            }
+
+            if (includePathExceptionsInClasspath) {
+                resolvePathsResult.getPathExceptions().keySet()
+                        .forEach(file -> classpathElements.add(file.getPath()));
             }
         } catch (Exception e) {
             getLog().warn(e.getMessage());
