@@ -160,7 +160,7 @@ public class JavaFXRunMojoTestCase extends AbstractMojoTestCase {
         setVariableValueToObject(mojo, "compilePath", project.getCompileClasspathElements());
         setVariableValueToObject(mojo, "session", session);
         setVariableValueToObject(mojo, "executable", "java");
-        setVariableValueToObject(mojo, "basedir", new File(getBasedir(), testPom.getParent()));
+        setVariableValueToObject(mojo, "basedir", testPom.getParentFile());
 
         return mojo;
     }
